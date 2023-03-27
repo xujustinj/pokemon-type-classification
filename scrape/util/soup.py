@@ -10,7 +10,7 @@ def load_soup(load_path: str) -> BeautifulSoup:
     return soup
 
 
-def save_soup(soup: BeautifulSoup, save_path: str):
+def save_soup(soup: BeautifulSoup, save_path: str) -> None:
     with open(save_path, "w") as f:
         f.write(str(soup))
 
@@ -26,3 +26,7 @@ def fetch_soup(url: str, cache_path: str | None = None) -> BeautifulSoup:
         # print(f"Saving resource {url} to cache at {cache_path}")
         save_soup(soup, cache_path)
     return soup
+
+
+def parse_int(soup: BeautifulSoup) -> int:
+    return int(soup.text.strip().split()[0])
