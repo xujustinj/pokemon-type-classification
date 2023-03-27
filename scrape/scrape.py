@@ -1,9 +1,10 @@
 from os import path, mkdir
-from difflib import get_close_matches
-from typing import Any, Callable, Generic, TypeVar
 
 from bs4 import BeautifulSoup
-import requests
+
+from util.dict import FuzzyDict, safe_update
+from util.soup import fetch_soup, load_soup, save_soup
+
 
 POKEDEX_URL = "https://pokemondb.net/pokedex/"
 ALL_URL = path.join(POKEDEX_URL, "all")
@@ -22,66 +23,6 @@ VARIANT_CACHE_DIR = path.join(BASE_CACHE_DIR, "variant")
 if not path.exists(VARIANT_CACHE_DIR):
     mkdir(VARIANT_CACHE_DIR)
 
-
-K = TypeVar('K')
-V = TypeVar('V')
-
-
-class FuzzyDict(Generic[V]):
-    def __init__(self, items: dict[str, V]):
-        assert len(items) > 0
-
-        self._items = items
-        self._n_items = len(self._items)
-        self._keys = list(self._items.keys())
-
-    def get(self, key: str) -> V:
-        if (key in self._items):
-            return self._items[key]
-        closest, = get_close_matches(
-            word=key,
-            possibilities=self._keys,
-            n=1,
-            cutoff=0.0,
-        )
-        print(f"'{key}' not found, falling back to '{closest}'")
-        return self._items[closest]
-
-    def __repr__(self) -> str:
-        return repr(self._items)
-
-
-def safe_update(d: dict[K, V], key: K, value: V) -> None:
-    if key in d:
-        assert d[key] == value, f'Key mismatch: expected {value} at {key} but got {d[key]}'
-    else:
-        d[key] = value
-
-
-def load_soup(load_path: str) -> BeautifulSoup:
-    with open(load_path, "r") as f:
-        soup = BeautifulSoup(f.read(), 'html.parser')
-    return soup
-
-
-def save_soup(soup: BeautifulSoup, save_path: str):
-    with open(save_path, "w") as f:
-        f.write(str(soup))
-
-
-def fetch_soup(url: str, cache_path: str | None = None) -> BeautifulSoup:
-    if path.exists(cache_path):
-        print(f"Resource {url} found in cache at {cache_path}")
-        soup = load_soup(cache_path)
-    else:
-        print(f"Resource {url} not in cache, fetching...")
-        req = requests.get(url)
-        soup = BeautifulSoup(req.text, 'html.parser')
-        print(f"Saving resource {url} to cache at {cache_path}")
-        save_soup(soup, cache_path)
-    return soup
-
-
 REGIONAL_PREFIXES = ["Galarian", "Alolan"]
 
 
@@ -95,7 +36,7 @@ def get_full_name(base_name: str, variant_name: str) -> str:
     return f'{base_name} {variant_name}'
 
 
-def name_to_pokemon() -> dict[str, str]:
+def name_to_dex_path() -> dict[str, str]:
     page = fetch_soup(
         url=path.join(POKEDEX_URL, "all"),
         cache_path=path.join(BASE_CACHE_DIR, "all.html"),
@@ -124,24 +65,24 @@ def name_to_pokemon() -> dict[str, str]:
     return FuzzyDict(mapping)
 
 
-NAME_TO_POKEMON = name_to_pokemon()
+NAME_TO_DEX_PATH = name_to_dex_path()
 
 
-def get_pokemon(pokemon: str) -> BeautifulSoup:
+def get_pokemon(dex_path: str) -> BeautifulSoup:
     return fetch_soup(
-        url=path.join(POKEDEX_URL, pokemon),
-        cache_path=path.join(POKEMON_CACHE_DIR, f"{pokemon}.html"),
+        url=path.join(POKEDEX_URL, dex_path),
+        cache_path=path.join(POKEMON_CACHE_DIR, f"{dex_path}.html"),
     )
 
 
 def get_variant(variant: str) -> BeautifulSoup:
     cache_path = path.join(VARIANT_CACHE_DIR, f"{variant}.html")
     if path.exists(cache_path):
-        print(f"Variant {variant} found in cache at {cache_path}")
+        # print(f"Variant {variant} found in cache at {cache_path}")
         soup = load_soup(cache_path)
     else:
-        print(f"Variant {variant} not in cache, fetching...")
-        pokemon = get_pokemon(NAME_TO_POKEMON.get(variant))
+        # print(f"Variant {variant} not in cache, fetching...")
+        pokemon = get_pokemon(NAME_TO_DEX_PATH.get(variant))
 
         tabs = pokemon.find("div", "sv-tabs-tab-list").find_all("a")
         variant_to_id = FuzzyDict({
@@ -150,7 +91,7 @@ def get_variant(variant: str) -> BeautifulSoup:
         })
         closest_id = variant_to_id.get(variant)
         soup = pokemon.find("div", id=closest_id)
-        print(f"Saving variant {variant} to cache at {cache_path}")
+        # print(f"Saving variant {variant} to cache at {cache_path}")
         save_soup(soup, cache_path)
     return soup
 
