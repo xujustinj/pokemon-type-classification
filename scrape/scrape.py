@@ -3,8 +3,8 @@ from os import path, mkdir
 
 from bs4 import BeautifulSoup
 
-from util.dict import FuzzyDict, safe_update
-from util.soup import fetch_soup, load_soup, parse_int, save_soup
+from .util.dict import FuzzyDict, safe_update
+from .util.soup import fetch_soup, load_soup, parse_int, save_soup
 
 
 POKEDEX_URL = "https://pokemondb.net/pokedex/"
