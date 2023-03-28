@@ -28,5 +28,15 @@ def fetch_soup(url: str, cache_path: str | None = None) -> BeautifulSoup:
     return soup
 
 
+def parse_str(soup: BeautifulSoup) -> str:
+    return soup.text.strip()
+
+
 def parse_int(soup: BeautifulSoup) -> int:
-    return int(soup.text.strip().split()[0])
+    return int(parse_str(soup).split()[0])
+
+
+def parse_percent(soup: BeautifulSoup) -> float:
+    raw = parse_str(soup).split()[0]
+    assert raw.endswith("%")
+    return float(raw[:-1])
