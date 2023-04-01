@@ -15,7 +15,7 @@ def save_soup(soup: BeautifulSoup, save_path: str) -> None:
         f.write(str(soup))
 
 
-def fetch_soup(url: str, cache_path: str | None = None) -> BeautifulSoup:
+def fetch_soup(url: str, cache_path: str) -> BeautifulSoup:
     if path.exists(cache_path):
         # print(f"Resource {url} found in cache at {cache_path}")
         soup = load_soup(cache_path)

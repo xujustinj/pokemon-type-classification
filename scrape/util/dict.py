@@ -17,6 +17,9 @@ class FuzzyDict(Generic[V]):
     def get(self, key: str) -> V:
         if (key in self._items):
             return self._items[key]
+        # hack to get around Darmanitan mapping to Galarian
+        elif key.startswith("Darmanitan "):
+            return self.get(key[len("Darmanitan "):])
         closest, = get_close_matches(
             word=key,
             possibilities=self._keys,

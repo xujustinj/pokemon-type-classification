@@ -9,6 +9,7 @@ for variant_name in [
     "Wormadam Plant Cloak",
     "Galarian Darmanitan Standard Mode",
     "Zacian Hero of Many Battles",
+    "Eternatus Eternamax",
 ]:
     print(variant_name)
     variant = Variant.fetch(variant_name)
