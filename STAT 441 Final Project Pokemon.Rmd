@@ -1,0 +1,144 @@
+---
+title: "STAT 441 Final Project: Pokemon Type Prediction"
+author: |
+  | STAT 441 / STAT 841 / CM 763: Statistical Learning -- Classification
+  | Name1, Name2, Name3, Name4 -- University of Waterloo
+date: "version: `r Sys.time()`"
+output:
+  bookdown::html_document2:
+    toc: yes
+    toc_float: no
+    theme: readable
+    number_sections: false
+  bookdown::pdf_document2:
+    toc: no
+    number_sections: true
+---
+
+```{r setup, include = FALSE}
+# Set of packages to use
+require(kableExtra) # for tables
+require(tidyverse) # loading it here prevents message display
+require(nnet)
+require(glmnet)
+require(ggplot2)
+require(leaps)
+require(doParallel)
+require(ggrepel)
+require(tinytex)
+require(scales)
+require(reshape2)
+set.seed(441) # set the random seed for reproducible results
+
+# Helper function reorder_cormat
+reorder_cormat <- function(cormat){
+  # Use correlation between variables as distance
+  dd <- as.dist((1-cormat)/2)
+  hc <- hclust(dd)
+  cormat <-cormat[hc$order, hc$order]
+}
+
+# Helper function get_upper_tri
+get_upper_tri <- function(cormat){
+  cormat[lower.tri(cormat)]<- NA
+  return(cormat)
+}
+```
+
+# Research Problem
+
+Pokemon is one of the most popular and successful game series worldwide. In the game, players catch and train monsters known as Pokemons and each Pokemon has its unique characteristics such as types, base stats. This raises our interest in establishing the relationship between the type of Pokemon and other of its attributes. More importantly, we wish to analyze the importance of the covariates used in Pokemon type classification and evaluate the performance of different models on the Pokemon dataset.
+
+# Dataset
+The raw data __Pokemon__ is obtained from 
+[Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420) and we scraped the missing values and the RGB value from [Pokemon Experience](https://bulbapedia.bulbagarden.net/wiki/Experience#Relation_to_level), [Pokedex Marriland](https://marriland.com/pokedex/).
+
+For the purpose of this research, we applied a 20%/80% split on the __Pokemon__ data to obtain __Pokemon_test__ and __Pokemon_train__ for testing and training respectively. The __Pokemon_train__ data set contains the information of 836 Pokemons. The 
+```{r}
+# Load and modify data
+pokemon <- read.csv("C:/Users/zhenz/Desktop/Final Project/pokemon_train.csv",header=T)
+pokemon[sapply(pokemon, is.character)] <- lapply(pokemon[sapply(pokemon, is.character)],as.factor)
+# Todo: Perhaps to display the sample Pokemon data using tibble (make it to have a nice looking)
+```
+The data are obtained from
+[Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420),
+[Pokemon Experience](https://bulbapedia.bulbagarden.net/wiki/Experience#Relation_to_level),
+[Pokedex Marriland](https://marriland.com/pokedex/)
+
+The dataset contains 41 variables and we are predicting the primary type (`type_1`) of the Pokemon which has 18 classes. The other covariates include the generation number, status, height, weight, base stat, training/breeding characteristics and resistance strength against other types.
+
+
+# Exploratory Data Analysis
+correlation heat map
+```{r,fig.align='center',fig.dim=c(10,10), echo=F}
+# Correlation heat map between numeric variables
+pokemon_numeric = pokemon[sapply(pokemon, is.numeric)]
+pokemon_info = pokemon_numeric[,1:19] # Ignore the type strength/weakness
+# Calculate correlation matrix
+cormat <- round(cor(pokemon_info),3)
+# Reorder correlation matrix
+cormat <- reorder_cormat(cormat)
+# Obtain the upper triangular correlation matrix
+upper_tri <- get_upper_tri(cormat)
+# Reshape the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+# Create heat map
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "#ECF0F1")+
+  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()+
+  labs(title="Correlation Heat Map")+
+  theme(plot.title=element_text(hjust=0.5))
+# Print the heatmap
+print(ggheatmap)
+```
+It is obvious that type_number, generation, egg_type_number and proportion_male has a weak correlation with other covariates.
+Pairwise T-test between classes
+
+Mean plots
+```{r,echo = F,fig.align='center',fig.dim=c(12,9), }
+# Do the group means
+pokemon_strength = pokemon_numeric[,20:37]
+classes = levels(pokemon$type_1)
+n_feature = ncol(pokemon_strength)
+pokemon_class_means = matrix(ncol=n_feature,nrow=18)
+for (i in 1:18){
+  pokemon_temp = pokemon_strength[pokemon$type_1 == classes[i],]
+  pokemon_class_means[i,] = apply(pokemon_temp,2,mean)
+}
+rownames(pokemon_class_means) = classes
+colnames(pokemon_class_means) = colnames(pokemon_strength)
+
+df <- data.frame(melt(pokemon_class_means, id = c("feature","type")))
+colnames(df) = c("type","feature","mean")
+
+ggplot(df, aes(x = feature, y=mean, group=type))+
+  geom_col(aes(fill=type),position = position_dodge2(reverse=T))+
+  facet_wrap(.~feature,ncol=6,scales="free")+
+  theme(legend.position="bottom")+
+  labs(title='Pokemon Feature Mean Plot')+
+  theme(plot.title=element_text(hjust=0.5))+
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+                             "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
+```
+
+# Overview of Classification Method
+
+  - Feature Elimination: We determine the feature importance of the data using __Random Forest__, __Recursive Feature Elimination__ and the __Boruta algorithm__. This will reduce the feature space and avoid overfitting. More importantly, it gives a concise model for interpretation.
+  
+  - Model fitting: We fit different models using the selected features after the feature elimination. The models considered includes __Logistic Regression__, __Decision Tree__, __Random Forest__, __Neural Networks__ and __SVM__. The models will be fit using packages from __R__ and __Python__.
+
+We note that due to the large number of feature and classes, we believe Decision tree will serve as a reasonable reference in evaluating the performance of other models.
+
+# Decision Tree
+```{r}
+# Build decision trees here
+```
+# Summary
