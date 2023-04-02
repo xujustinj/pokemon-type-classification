@@ -1,0 +1,125 @@
+---
+title: "Feature Importance"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(nnet)
+library(randomForest)
+library(glmnet)
+library(gbm)
+library(caret)
+library(doParallel)
+library(Boruta)
+library(ggplot2)
+set.seed(441)
+```
+
+```{r}
+# Load data
+pokemon <- read.csv("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/data/3-split_data.train.csv")
+```
+
+```{r}
+# Drop 'type_2' column for now and factor categorical variables 
+# Also encode TRUE/FALSE as 1/0
+pokemon <- pokemon[,-5] %>%
+  mutate(across(c(status, 
+                  type_1), factor)) %>%
+  mutate(has_gender = ifelse(has_gender == "True", 1, 0))
+```
+
+```{r}
+# multinomial regression for type 1 regressed on everything else except type 2
+m1 <- multinom(type_1 ~ ., data = pokemon, MaxNWts = 2000)
+m1_summ <- summary(m1)
+```
+```{r}
+m1_summ$coefficients
+```
+
+```{r}
+# Random Forest for Variable Importance
+t1_rf <- randomForest(type_1 ~., data = pokemon, importance = TRUE)
+```
+
+```{r}
+# Display variable importance
+round(importance(t1_rf),3)
+```
+
+```{r}
+  # make dataframe from importance() output
+  feat_imp_df <- importance(t1_rf) %>% 
+    data.frame() %>% 
+    mutate(feature = row.names(.)) 
+
+  # plot dataframe
+  ggplot(feat_imp_df, aes(x = reorder(feature, MeanDecreaseGini), 
+                         y = MeanDecreaseGini)) +
+    geom_bar(stat='identity', fill = "#1F6CFA") +
+    coord_flip() +
+    labs(
+      x     = "Feature",
+      y     = "Relative Importance",
+      title = "Feature Importance"
+    ) 
+```
+
+```{r}
+# GBM for variable importance
+# but take with grain of salt since documentation says currently
+# multinom is broken
+t1_gbm <- gbm(type_1 ~ ., data = pokemon,
+              distribution = "multinomial", n.trees = 50000,  shrinkage = 0.01, verbose = FALSE)
+```
+
+```{r}
+# Plot and relative variable importance
+t1_gbm_summ <- summary(t1_gbm)
+t1_gbm_summ
+```
+
+```{r, warning = FALSE}
+# Implement RFE and print optimal variables
+cl <- makeCluster(detectCores() - 3)
+registerDoParallel(cl)
+ctrl <- rfeControl(functions = caretFuncs, method = "cv", 
+                   number = 5, verbose = FALSE, allowParallel = TRUE,
+                   saveDetails = TRUE)
+
+rfe_res <- rfe(x = pokemon[,-4],
+               y = pokemon[,4],
+               sizes = 1:length(pokemon[,-4]),
+               rfeControl = ctrl)
+rfe_res$optVariables
+stopCluster(cl)
+```
+
+```{r}
+# Boruta algorithm
+
+b1 <- Boruta(pokemon[,-4], pokemon[,4])
+```
+
+```{r}
+b1
+```
+
+
+```{r}
+b1$finalDecision
+```
+
+```{r}
+# Save outputs
+saveRDS(rfe_res, file = "rfe_output.rds")
+```
+
+
+
+
+
