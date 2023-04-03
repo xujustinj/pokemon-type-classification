@@ -28,6 +28,10 @@ require(ggrepel)
 require(tinytex)
 require(scales)
 require(reshape2)
+library(Boruta)
+library(gbm)
+library(caret)
+library(randomForest)
 set.seed(441) # set the random seed for reproducible results
 
 # Helper function reorder_cormat
@@ -56,10 +60,11 @@ The raw data __Pokemon__ is obtained from
 For the purpose of this research, we applied a 20%/80% split on the __Pokemon__ data to obtain __Pokemon_test__ and __Pokemon_train__ for testing and training respectively. The __Pokemon_train__ data set contains the information of 836 Pokemons. The 
 ```{r}
 # Load and modify data
-pokemon <- read.csv("C:/Users/zhenz/Desktop/Final Project/pokemon_train.csv",header=T)
+pokemon <- read.csv("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/data/3-split_data.train.csv")
 pokemon[sapply(pokemon, is.character)] <- lapply(pokemon[sapply(pokemon, is.character)],as.factor)
 # Todo: Perhaps to display the sample Pokemon data using tibble (make it to have a nice looking)
 ```
+
 The data are obtained from
 [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420),
 [Pokemon Experience](https://bulbapedia.bulbagarden.net/wiki/Experience#Relation_to_level),
@@ -136,6 +141,45 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
   - Model fitting: We fit different models using the selected features after the feature elimination. The models considered includes __Logistic Regression__, __Decision Tree__, __Random Forest__, __Neural Networks__ and __SVM__. The models will be fit using packages from __R__ and __Python__.
 
 We note that due to the large number of feature and classes, we believe Decision tree will serve as a reasonable reference in evaluating the performance of other models.
+
+```{r}
+# Random Forest for Variable Importance
+# Removing 'type_2' 
+pokemon_rf <- randomForest(type_1 ~., data = pokemon[,-5], importance = TRUE)
+
+feat_imp <- importance(pokemon_rf) %>% 
+  data.frame() %>% 
+  mutate(feature = row.names(.)) 
+
+ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseGini), 
+                         y = MeanDecreaseGini)) +
+    geom_bar(stat='identity', fill = "#1F6CFA") +
+    coord_flip() +
+    labs(
+      x     = "Feature",
+      y     = "Relative Importance",
+      title = "Feature Importance From Random Forest"
+    ) 
+```
+
+```{r}
+# RFE loading from RDS file since takes too long to run
+rfe_p <- readRDS("rfe_output.rds")
+print(paste0('Eliminated Variable: ', setdiff(colnames(pokemon[,-c(4,5)]), rfe_p$optVariables)))
+```
+
+```{r}
+# Boruta algorithm
+b1 <- Boruta(pokemon[,-c(4,5)], pokemon[,4])
+```
+
+```{r}
+# Display summary of b1
+b1
+```
+
+From a collective standpoint, the features selected to be insignificant would be 'has_gender', 'sprite_overflow_horizontal', 'sprite_overflow_vertical', 'sprite_size'. In retrospect, the decisions make sense since has_gender is a TRUE/FALSE variable corresponding to whether a pokemon has a gender, from the game data very few pokemon are genderless so it would seem insignificant. The respective 'sprite' variables up for elimination are all based off the pokemon's sprite or pixel image in game, overflow relates to when the sprite is so big that it gets clipped off based off the general image format. Thus it would also make sense that these variables would not be very useful in trying to predict pokemon type since only physically massive pokemon would have this variable set to TRUE or 1. 
+
 
 # Decision Tree
 ```{r}
