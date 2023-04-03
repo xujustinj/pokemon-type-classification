@@ -26,6 +26,7 @@ from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoost
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder, MinMaxScaler
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -83,7 +84,6 @@ Plotting the decision tree to check how it looks like
 tree.plot_tree(clf_full, 
                filled=True, 
                feature_names=ct.get_feature_names_out())
-plt.rcParams['figure.figsize'] = [200, 200]
 plt.show()
 ```
 
@@ -172,6 +172,7 @@ sns.lineplot(
     marker="o",
     drawstyle="steps-post"
 )
+plt.title("CV error vs alpha values for all 5 folds")
 plt.xscale("log")
 ```
 
@@ -217,6 +218,7 @@ sns.lineplot(
     marker="o",
     drawstyle="steps-post"
 )
+plt.title("Average CV error vs alpha values")
 plt.xscale("log")
 ```
 
@@ -258,3 +260,19 @@ print(clf_pruned.score(X_test, y_test))
 ```
 
 So the decision tree is able to predict 79.4% correct in the test set, a good baseline to start with and compare more complex models with it as the project progress
+
+```{python}
+predictions = clf_pruned.predict(X_test)
+cm = confusion_matrix(y_test, predictions, labels=clf_pruned.classes_)
+display = ConfusionMatrixDisplay(confusion_matrix=cm,
+                              display_labels=clf_pruned.classes_)
+
+plt.rcParams['figure.figsize'] = [10, 10]
+display.plot(xticks_rotation='vertical')
+plt.title("Confusion Matrix on Test Data for Trained Pruned Decision Tree")
+plt.show()
+```
+
+```{python}
+
+```
