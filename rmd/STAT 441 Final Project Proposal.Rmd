@@ -66,7 +66,7 @@ Multi-label classification aims to predict all of a Pokémon’s types (both `ty
 
 There have been previous attempts to classify Pokémon type based on various sets of attributes. We can classify these attempts based on the features used, the type of classification performed, and the models used.
 
-```{r child = 'previous-works.md'}
+```{r child="tables/previous_works.md"}
 ```
 
 We did not find any explorations that used combinations of data such as Pokedex and sprites together, so our work will be novel in that regard. We will first tackle the single-label classification problem, then attempt a new approach based on data duplication to automatically convert any single-label classifier into a multi-label one.
@@ -106,12 +106,12 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
           legend.text = element_text(size = 13))+
   theme(legend.text = element_text(size = 15))+
   labs(x = NULL, y = NULL)+
-  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3",
                              "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
-                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1",
                              "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
 ```
-By inspection, Pokémon from a certain types will have a significantly higher/lower average in some of the features such as weight and egg cycles. However, this is not the case in general, an example of such would be number of abilities.The rest of the results are included in Appendix 2, 3, 4, and 5. 
+By inspection, Pokémon from a certain types will have a significantly higher/lower average in some of the features such as weight and egg cycles. However, this is not the case in general, an example of such would be number of abilities.The rest of the results are included in Appendix 2, 3, 4, and 5.
 
 # Feature Importance
 
@@ -121,7 +121,7 @@ In a Random Forest model, variable importance can be measured using the permutat
 
 # Overview of Classification Method
 
-After performing feature importance analysis, we will be able to fit different models on the dataset. The methods that can be used in the scope of this class are Logistic Regression, Decision Tree, Random Forest, Neural Networks, and Support Vector Machine. We will be using both R and Python as primary coding languages. For Logistic Regression, we will implement it with R. For all other models, we will implement them in Python with combinations of Sci-kit Learn, TensorFlow, and PyTorch. 
+After performing feature importance analysis, we will be able to fit different models on the dataset. The methods that can be used in the scope of this class are Logistic Regression, Decision Tree, Random Forest, Neural Networks, and Support Vector Machine. We will be using both R and Python as primary coding languages. For Logistic Regression, we will implement it with R. For all other models, we will implement them in Python with combinations of Sci-kit Learn, TensorFlow, and PyTorch.
 Given the large number of features and classes in the dataset, we believe Decision Tree will be able to provide a reasonable baseline which all other models, such as tree-based ensemble methods and neural networks can be contrasted against.
 
 To compare the difference in model performance, we will apply the nested cross-validation (CV) approach to the different models. The dataset will be split into 10 stratified sets, where we want to have an even split in terms of y-value to guarantee the model is trained and evaluated on all existing classes with the original data distribution, and we take out 1 set in the outer CV each time. Then, we will do the inner CV with the other 9 sets by splitting them into 10 stratified sets. The error for the inner CV will allow us to select the best tuning parameters, and use the tuning parameters to find the best model parameter in the outer CV. The different models with the optimal tuning and model parameters will be compared by using their average CV error across all outer folds as an estimated expected error across the entire dataset.
@@ -130,9 +130,9 @@ To compare the difference in model performance, we will apply the nested cross-v
 
 We opted to have a decision tree as our baseline. Using a 5-fold cross-validation on the training set, we were able to plot the error vs alpha values for each fold and the average CV error vs alpha values, illustrated in appendix 8 and below respectively.
 ```{r,out.width = "300px", echo = F, fig.align='center'}
-knitr::include_graphics("C:/Users/Kkda/Desktop/Final Project/Figures/CV-Loss-vs-Alpha.png")
+knitr::include_graphics("figures/cv_loss_mean_vs_alpha.png")
 ```
-The optimal alpha is 0.004813. We then used this optimal alpha to generate an optimal decision tree, which has 36 leaf nodes. This tree is then evaluated on the test set, which achieved a 79.4% prediction accuracy. A confusion matrix is also plotted in Appendix 9. We can see that most of the predictions are really good. This decision tree model does not do well with Bug-type Pokémon and often classifies them as other classes. The model also predicts some Pokémon as Water Type and Steel Type while they are actually not. These predictions may be improved by other models that we plan to train. 
+The optimal alpha is 0.004813. We then used this optimal alpha to generate an optimal decision tree, which has 36 leaf nodes. This tree is then evaluated on the test set, which achieved a 79.4% prediction accuracy. A confusion matrix is also plotted in Appendix 9. We can see that most of the predictions are really good. This decision tree model does not do well with Bug-type Pokémon and often classifies them as other classes. The model also predicts some Pokémon as Water Type and Steel Type while they are actually not. These predictions may be improved by other models that we plan to train.
 
 \newpage
 # Appendix
@@ -180,9 +180,9 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
   theme(plot.title=element_text(hjust=0.5))+
   theme(plot.title=element_text(size=35))+
   labs(x = NULL, y = NULL)+
-  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3",
                              "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
-                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1",
                              "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
 ```
 \newpage
@@ -212,9 +212,9 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
   theme(plot.title=element_text(hjust=0.5))+
   theme(plot.title=element_text(size=35))+
   labs(x = NULL, y = NULL)+
-  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3",
                              "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
-                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1",
                              "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
 ```
 \newpage
@@ -244,9 +244,9 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
   theme(plot.title=element_text(hjust=0.5))+
   theme(plot.title=element_text(size=35))+
   labs(x = NULL, y = NULL)+
-  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3",
                              "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
-                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1",
                              "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
 ```
 \newpage
@@ -267,11 +267,11 @@ melted_cormat <- melt(upper_tri, na.rm = TRUE)
 # Create heat map
 ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
   geom_tile(color = "#ECF0F1")+
-  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF",
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
                        name="Pearson\nCorrelation") +
   theme_minimal()+ # minimal theme
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1,
                                    size = 12, hjust = 1))+
   coord_fixed()+
   labs(title="Correlation Heat Map")+
@@ -284,7 +284,7 @@ print(ggheatmap)
 ## Appendix 6: Boruta Algorithm Feature Importance Plot
 ```{r,fig.align="center",fig.dim=c(17,22),echo=F}
 # Random Forest for Variable Importance
-# Removing 'type_2' 
+# Removing 'type_2'
 pokemon_rf <- randomForest(type_1 ~., data = pokemon[,-5], importance = TRUE)
 
 # Boruta algorithm
@@ -302,7 +302,7 @@ b1_imp$decision <- b1$finalDecision
 
 ggplot(b1_imp, aes(x = reorder(feature, Mean),
                    y = Mean,
-                   fill = decision)) + 
+                   fill = decision)) +
   geom_bar(stat = 'identity') +
   coord_flip() +
   labs(x = "Feature",
@@ -322,10 +322,10 @@ ggplot(b1_imp, aes(x = reorder(feature, Mean),
 ## Appendix 7: Random Forest Feature Importance Plot
 ```{r,fig.align="center",fig.dim=c(17,22),echo=F}
 # Random Forest Feature Importance Plot
-feat_imp <- data.frame(importance(pokemon_rf)) %>% 
-  mutate(feature = row.names(.)) 
+feat_imp <- data.frame(importance(pokemon_rf)) %>%
+  mutate(feature = row.names(.))
 
-ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy), 
+ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy),
                      y = MeanDecreaseAccuracy)) +
     geom_bar(stat='identity', fill = "#1F6CFA") +
     coord_flip() +
@@ -344,13 +344,13 @@ ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy),
 
 ## Appendix 8: CV Error vs Alpha 5 fold
 ```{r, out.width = "500px", echo = F, fig.align='center'}
-knitr::include_graphics("C:/Users/Kkda/Desktop/Final Project/Figures/CV-Error-vs-Alpha-5-fold.png")
+knitr::include_graphics("figures/cv_loss_folds_vs_alpha.png")
 ```
 \newpage
 
-## Appendix 9: Confusion-Matrix
+## Appendix 9: Confusion Matrix
 ```{r, out.width = "500px", echo = F, fig.align='center'}
-knitr::include_graphics("C:/Users/Kkda/Desktop/Final Project/Figures/Confusion-Matrix.png")
+knitr::include_graphics("figures/confusion_matrix.png")
 ```
 \newpage
 
@@ -424,11 +424,11 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
           legend.text = element_text(size = 13))+
   theme(legend.text = element_text(size = 15))+
   labs(x = NULL, y = NULL)+
-  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3", 
+  scale_fill_manual(values=c("#A8B821", "#6F5848", "#7038F9","#F8D030", "#F7C9E3",
                              "#C03028", "#F07F2F", "#A890ED", "#705798","#78C84F",
-                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1", 
+                             "#E0C069", "#98D8D8", "#A9A878", "#A040A1",
                              "#F85788", "#B7A038", "#B8B8D0", "#6890F0"))
-                             
+
 # Correlation heat map between numeric variables
 pokemon_numeric = pokemon[sapply(pokemon, is.numeric)]
 pokemon_info = pokemon_numeric
@@ -443,11 +443,11 @@ melted_cormat <- melt(upper_tri, na.rm = TRUE)
 # Create heat map
 ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
   geom_tile(color = "#ECF0F1")+
-  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF",
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
                        name="Pearson\nCorrelation") +
   theme_minimal()+ # minimal theme
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1,
                                    size = 12, hjust = 1))+
   coord_fixed()+
   labs(title="Correlation Heat Map")+
@@ -456,7 +456,7 @@ ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
 print(ggheatmap)
 
 # Random Forest for Variable Importance
-# Removing 'type_2' 
+# Removing 'type_2'
 pokemon_rf <- randomForest(type_1 ~., data = pokemon[,-5], importance = TRUE)
 
 # Boruta algorithm
@@ -474,7 +474,7 @@ b1_imp$decision <- b1$finalDecision
 
 ggplot(b1_imp, aes(x = reorder(feature, Mean),
                    y = Mean,
-                   fill = decision)) + 
+                   fill = decision)) +
   geom_bar(stat = 'identity') +
   coord_flip() +
   labs(x = "Feature",
@@ -490,10 +490,10 @@ ggplot(b1_imp, aes(x = reorder(feature, Mean),
   theme(legend.text = element_text(size = 25))
 
 # Random Forest Feature Importance Plot
-feat_imp <- data.frame(importance(pokemon_rf)) %>% 
-  mutate(feature = row.names(.)) 
+feat_imp <- data.frame(importance(pokemon_rf)) %>%
+  mutate(feature = row.names(.))
 
-ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy), 
+ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy),
                      y = MeanDecreaseAccuracy)) +
     geom_bar(stat='identity', fill = "#1F6CFA") +
     coord_flip() +
@@ -509,16 +509,16 @@ ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy),
     theme(axis.title.x = element_text(size = 30))
 ```
 
-```{r child = "Build_Decision_Tree.rmd"}
+```{r child="converted_ipynb/build_decision_tree.rmd"}
 ```
 
-```{r child = "1-scrape_missing_values.Rmd"}
+```{r child="converted_ipynb/1_scrape_missing_values.Rmd"}
 ```
 
-```{r child="2-generate_features.Rmd"}
+```{r child="converted_ipynb/2_generate_features.Rmd"}
 ```
 
-```{r child = "3-split_data.Rmd"}
+```{r child="converted_ipynb/3_split_data.Rmd"}
 ```
 
 ## Scraper Code

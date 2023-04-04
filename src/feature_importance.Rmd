@@ -20,14 +20,14 @@ set.seed(441)
 
 ```{r}
 # Load data
-pokemon <- read.csv("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/data/3-split_data.train.csv")
+pokemon <- read.csv("../data/3-split_data.train.csv")
 ```
 
 ```{r}
-# Drop 'type_2' column for now and factor categorical variables 
+# Drop 'type_2' column for now and factor categorical variables
 # Also encode TRUE/FALSE as 1/0
 pokemon <- pokemon[,-5] %>%
-  mutate(across(c(status, 
+  mutate(across(c(status,
                   type_1), factor)) %>%
   mutate(has_gender = ifelse(has_gender == "True", 1, 0))
 ```
@@ -53,12 +53,12 @@ round(importance(t1_rf),3)
 
 ```{r}
   # make dataframe from importance() output
-  feat_imp_df <- importance(t1_rf) %>% 
-    data.frame() %>% 
-    mutate(feature = row.names(.)) 
+  feat_imp_df <- importance(t1_rf) %>%
+    data.frame() %>%
+    mutate(feature = row.names(.))
 
   # plot dataframe
-  ggplot(feat_imp_df, aes(x = reorder(feature, MeanDecreaseGini), 
+  ggplot(feat_imp_df, aes(x = reorder(feature, MeanDecreaseGini),
                          y = MeanDecreaseGini)) +
     geom_bar(stat='identity', fill = "#1F6CFA") +
     coord_flip() +
@@ -66,7 +66,7 @@ round(importance(t1_rf),3)
       x     = "Feature",
       y     = "Relative Importance",
       title = "Feature Importance"
-    ) 
+    )
 ```
 
 ```{r}
@@ -87,7 +87,7 @@ t1_gbm_summ
 # Implement RFE and print optimal variables
 cl <- makeCluster(detectCores() - 3)
 registerDoParallel(cl)
-ctrl <- rfeControl(functions = caretFuncs, method = "cv", 
+ctrl <- rfeControl(functions = caretFuncs, method = "cv",
                    number = 5, verbose = FALSE, allowParallel = TRUE,
                    saveDetails = TRUE)
 
@@ -118,8 +118,3 @@ b1$finalDecision
 # Save outputs
 saveRDS(rfe_res, file = "rfe_output.rds")
 ```
-
-
-
-
-
