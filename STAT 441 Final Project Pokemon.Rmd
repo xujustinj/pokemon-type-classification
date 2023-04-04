@@ -113,7 +113,7 @@ By inspection, the weakness of Pokemons varies greatly across different types. T
 
 To solve this classification task, we first aim to determine the feature importance of the data using methods such as Random Forest (library `randomForest`) and the Boruta algorithm (library `Boruta`) in R. With the hope of reducing our feature space, we improve the model accuracy and convergence by eliminating redundant and irrelevant features. In addition, this can avoid overfitting with less complex models by having fewer weights in the models.
 
-In a Random Forest model, variable importance can be measured using the permutation-based difference in out of bag error (or mean decrease in accuracy). The Boruta algorithm uses this to perform feature selection. For each feature in the original dataset, we shuffle its observed values to produce a permuted “shadow feature”. Fitting a Random Forest on both the features and their shadows, features that are chosen more often than any other shadow feature are selected. The algorithm repeats this many times, measuring the importance of each feature by how frequently it is selected. The highest-frequency features are accepted, the lowest-frequency features are rejected, and everything in between is considered tentative. Refer to appendix 2 and 3 for the respective plots of feature importance.
+In a Random Forest model, variable importance can be measured using the permutation-based difference in out of bag error (or mean decrease in accuracy). The Boruta algorithm uses this to perform feature selection. For each feature in the original dataset, we shuffle its observed values to produce a permuted “shadow feature”. Fitting a Random Forest on both the features and their shadows, features that are chosen more often than any other shadow feature are selected. The algorithm repeats this many times, measuring the importance of each feature by how frequently it is selected. The highest-frequency features are accepted, the lowest-frequency features are rejected, and everything in between is considered tentative. Refer to appendix 3 and 4 for the respective plots of feature importance.
 
 # Overview of Classification Method
 
@@ -124,12 +124,12 @@ To compare the difference in model performance, we will apply the nested cross-v
 
 # Prelimary Results
 
-We opted to have a Decision Tree as our baseline. Using a 5-fold cross-validation on the training set, we were able to plot the error vs alpha values for each fold and the average CV error vs alpha values, illustrated in appendix 4 and below respectively.
+We opted to have a Decision Tree as our baseline. Using a 5-fold cross-validation on the training set, we were able to plot the error vs alpha values for each fold and the average CV error vs alpha values, illustrated in appendix 5 and below respectively.
 ```{r,out.width = "300px", echo = F, fig.align='center'}
 knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/CV-Loss-vs-Alpha.png")
 ```
 
-The optimal alpha is 0.004813. We then used this optimal alpha to generate an optimal decision tree, which has 36 leaf nodes. This tree is then evaluated on the test set, which achieved a 79.4% prediction accuracy. A confusion matrix is also plotted in Appendix 5. We can see that most of the predictions are really good. This decision tree model does not do well with Bug-type Pokemon and often classifies them as other classes. The model also predicts some Pokemon as Water Type and Steel Type while they are actually not. These predictions may be improved by other models that we plan to train. 
+The optimal alpha is 0.004813. We then used this optimal alpha to generate an optimal decision tree, which has 36 leaf nodes. This tree is then evaluated on the test set, which achieved a 79.4% prediction accuracy. A confusion matrix is also plotted in Appendix 6. We can see that most of the predictions are really good. This decision tree model does not do well with Bug-type Pokemon and often classifies them as other classes. The model also predicts some Pokemon as Water Type and Steel Type while they are actually not. These predictions may be improved by other models that we plan to train. 
 
 
 
@@ -149,7 +149,25 @@ The optimal alpha is 0.004813. We then used this optimal alpha to generate an op
 
 # Appendix
 
-Appendix 1
+## Appendix 1: Data set
+
+The [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) contains 13 text attributes (including Pokémon type) and 37 continuous attributes. Some text features are name of the Pokémon and do not contribute in making predictions, hence we remove them from our analysis. Other text attributes include the type of the Pokemon and its eggs. Meanwhile, the majority of continuous attributes are made up by the Pokémon’s combat statistics such as attack and defense, as well as specific statistics about combat interactions. The `damage_from_X` attributes indicates the weakness of the Pokemon: the damage received by a Pokemon from type `X` is multiplied by the `damage_from_X` factor. The combination of all 18 `damage_from_X` attributes encodes the Pokemon’s type-based advantages and disadvantages in combat.
+
+Each Pokemon sprite is a 56x42 image, from which we derive an additional 13 features.
+
+- `sprite_size`: the proportion of pixels occupied by the sprite
+
+- `sprite_perimeter`: the number of pixels occupied by the sprite’s boundary
+
+- `sprite_{red/green/blue/brightness}_mean`: the mean of that pixel value over the entire sprite
+
+- `sprite_{red/green/blue/brightness}_sd`: the (population) standard deviation of that pixel over the entire sprite
+
+- `sprite_overflow_{vertical/horizontal}`: the amount by which the sprite touches the boundaries of the image
+
+We also noticed that a Pokemon’s egg’s type is usually the same as the type of the Pokemon itself. Using that feature would make the classification task too easy. Furthermore, using egg type is against the spirit of the classification task because that information is more obscure than type itself. After removing egg type and performing some other transformations, we arrive at a final dataset containing 3 categorical features (including type), 1 binary feature, and 50 numerical features.
+
+## Appendix 2: Correlation Heat Map Between Numeric Variables
 ```{r}
 # Correlation heat map between numeric variables
 pokemon_numeric = pokemon[sapply(pokemon, is.numeric)]
@@ -178,7 +196,7 @@ ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
 print(ggheatmap)
 ```
 
-Appendix 2
+## Appendix 3: Boruta Algorithm Feature Importance Plot
 ```{r}
 # Random Forest for Variable Importance
 # Removing 'type_2' 
@@ -206,7 +224,8 @@ ggplot(b1_imp, aes(x = reorder(feature, Mean),
        y = "Importance",
        title = "Importance of Variables by the Boruta Algorithm")
 ```
-Appendix 3
+
+## Appendix 4: Random Forest Feature Importance Plot
 ```{r}
 # Random Forest Feature Importance Plot
 feat_imp <- data.frame(importance(pokemon_rf)) %>% 
@@ -221,15 +240,18 @@ ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy),
          title = "Feature Importance From Random Forest") 
 
 ```
-Appendix 4
+
+## Appendix 5: CV Error vs Alpha 5 fold
 ```{r, out.width = "300px", echo = F, fig.align='center'}
 knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/CV-Error-vs-Alpha-5-fold.png")
 ```
-Appendix 5
+
+## Appendix 6: Confusion-Matrix
 ```{r, out.width = "300px", echo = F, fig.align='center'}
 knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/Confusion-Matrix.png")
 ```
 
+## Appendix 7: Code
 ```{r child = "Build_Decision_Tree.rmd"}
 ```
 
