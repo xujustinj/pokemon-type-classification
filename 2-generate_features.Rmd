@@ -20,11 +20,11 @@ This notebook reduces the data to only the features which we want to use, and el
 
 ## Setup
 
-```{python}
+```py
 import pandas as pd
 ```
 
-```{python}
+```py
 IN_PATH = "data/1-scrape_missing_values.csv"
 pokedex = pd.read_csv(IN_PATH)
 pokedex.head()
@@ -34,7 +34,7 @@ pokedex.head()
 
 We will use all features except those that have too many different values (e.g. names) or features that give away the type too easily (e.g. egg type).
 
-```{python}
+```py
 features = pokedex.copy().drop(columns=[
     "Unnamed: 0",
     "pokedex_number",
@@ -45,7 +45,7 @@ features = pokedex.copy().drop(columns=[
 ])
 ```
 
-```{python}
+```py
 def fill_explicit_none_type(df: pd.DataFrame) -> pd.DataFrame:
     df["type_2"] = df["type_2"].fillna("None")
     return df
@@ -55,7 +55,7 @@ features = fill_explicit_none_type(features)
 
 [Eternatus Eternamax](https://bulbapedia.bulbagarden.net/wiki/Eternatus_(Pok%C3%A9mon)) is the only Pokémon with unknown weight. It is 5 times the height of its normal form, so if we assume that Eternatus Eternamax is about 5 times as large in every dimension, its volume (thus its mass, assuming the same density) is 125 times as much (placing it at 118,750 kg).
 
-```{python}
+```py
 def impute_eternamax_weight(df, weight_kg=(5**3)*950):
     df.loc[
         pokedex["name"] == "Eternatus Eternamax",
@@ -68,7 +68,7 @@ features = impute_eternamax_weight(features)
 
 Based on values from [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Experience#Relation_to_level), we can associate each growth rate with the experience it takes the Pokémon to reach maximum level (100).
 
-```{python}
+```py
 MAX_EXP = {
     "Erratic": 600_000,
     "Fast": 800_000,
@@ -89,7 +89,7 @@ def quantify_growth_rate(df: pd.DataFrame) -> pd.DataFrame:
 features = quantify_growth_rate(features)
 ```
 
-```{python}
+```py
 def transform_gender(df: pd.DataFrame) -> pd.DataFrame:
     columns = df.columns.to_list()
     if "percentage_male" not in columns:
@@ -104,7 +104,7 @@ features = transform_gender(features)
 
 The `against_*` columns are a bit poorly named. We replace the names with `damage_from_*`, which is clearer.
 
-```{python}
+```py
 def clarify_against_naming(df: pd.DataFrame) -> pd.DataFrame:
     types: set[str] = set(df["type_1"])
     return df.rename(columns={
@@ -118,7 +118,7 @@ features = clarify_against_naming(features)
 
 In the original data, [Dewgong](https://bulbapedia.bulbagarden.net/wiki/Dewgong_(Pok%C3%A9mon)) has 125 as its `damage_from_ice`, which is incorrect (should be 0.125).
 
-```{python}
+```py
 def fix_dugong_damage_from_ice(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[df["damage_from_ice"] == 125, "damage_from_ice"] = 0.125
     return df
@@ -128,7 +128,7 @@ features = fix_dugong_damage_from_ice(features)
 
 Convert all columns to either `float` (continuous), `bool` (binary), or `str` (categorical). In practice, this just means converting all `int` columns to `float`.
 
-```{python}
+```py
 def cleanup_types(df: pd.DataFrame) -> pd.DataFrame:
     int_columns = df.columns[df.dtypes == "int64"]
     df[int_columns] = df[int_columns].astype(float)
@@ -145,7 +145,7 @@ features = cleanup_types(features)
 
 Sanity check:
 
-```{python}
+```py
 assert not features.isna().any().any()
 print(features.dtypes)
 features.head()
@@ -153,7 +153,7 @@ features.head()
 
 ## Save Results
 
-```{python}
+```py
 OUT_PATH = "data/2-generate_features.csv"
 features.to_csv(OUT_PATH, index=False)
 ```

@@ -24,13 +24,13 @@ This notebook uses our custom scraper to retrieve missing values from the websit
 
 ## Setup
 
-```{python}
+```py
 import pandas as pd
 
 from scrape import Variant
 ```
 
-```{python}
+```py
 IN_PATH = "data/0-raw.csv"
 pokedex = pd.read_csv(IN_PATH)
 pokedex.head()
@@ -38,12 +38,12 @@ pokedex.head()
 
 ## Scraping
 
-```{python}
+```py
 NAME = "name"
 COLUMNS = Variant.PROPERTIES
 ```
 
-```{python}
+```py
 fetched_variants = {
     i: Variant.fetch(variant_name)
     for i, variant_name in zip(pokedex.index, pokedex[NAME])
@@ -52,7 +52,7 @@ fetched_variants = {
 
 We will assume (perhaps foolishly) that any non-NA values in the dataset are correct, even if we find conflicting values through scraping.
 
-```{python}
+```py
 filled = pokedex.copy()
 
 for prop in Variant.PROPERTIES:
@@ -72,7 +72,7 @@ for i, variant in fetched_variants.items():
 
 ## Save Results
 
-```{python}
+```py
 OUT_PATH = "data/1-scrape_missing_values.csv"
 filled.to_csv(OUT_PATH, index=False)
 ```

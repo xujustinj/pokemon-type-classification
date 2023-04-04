@@ -18,7 +18,7 @@ jupyter:
 
 First, import required packages
 
-```{python}
+```py
 # import required packages and methods
 from sklearn.model_selection import StratifiedKFold
 from sklearn import tree
@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 
 Then, load training data and check the data types. `has_gender` column is removed because it's not important at all, and `type_2` is removed because it may reveal `type_1` information. 
 
-```{python}
+```py
 # load training dataset
 poke_train = pd.read_csv("./data/3-split_data.train.csv")
 poke_train = poke_train.drop(columns=['has_gender'])
@@ -47,7 +47,7 @@ poke_train.dtypes
 
 Transform features to acceptable data types for sklearn decision trees
 
-```{python}
+```py
 # create the column transformer
 ct = ColumnTransformer([
     ('onehotstatus',
@@ -63,7 +63,7 @@ y_train = poke_train['type_1']
 
 Generate the full decision tree
 
-```{python}
+```py
 # create decision tree
 clf_full = tree.DecisionTreeClassifier(
     criterion="gini",    # loss function
@@ -79,7 +79,7 @@ clf_full.fit(X_train, y_train)
 
 Plotting the decision tree to check how it looks like
 
-```{python}
+```py
 # plot the full decision tree
 tree.plot_tree(clf_full, 
                filled=True, 
@@ -91,7 +91,7 @@ plt.show()
 
 First, we plot the cost complexity pruning path on the full data. 
 
-```{python}
+```py
 ccp_path = clf_full.cost_complexity_pruning_path(X_train, y_train)
 
 plt.rcParams['figure.figsize'] = [10, 10]
@@ -109,7 +109,7 @@ plt.tight_layout()
 
 Proceed with crossvalidation to choose $\alpha$
 
-```{python}
+```py
 # crossvalidation folds
 n_folds = 5
 cv = StratifiedKFold(
@@ -161,7 +161,7 @@ for (train_id, test_id) in cv.split(X_train, y_train):
 
 Plot loss vs alpha for all folds
 
-```{python}
+```py
 # loss vs alpha for each fold
 plt_data = pd.concat([pd.DataFrame(cv_loss[i]).assign(fold_id=i) for i in np.arange(n_folds)])
 sns.lineplot(
@@ -178,7 +178,7 @@ plt.xscale("log")
 
 The average CV error as a function of $\alpha$ is calculated and plotted below.
 
-```{python}
+```py
 def step_fun(x, x_step, y_step):
     """
     Step function.
@@ -189,8 +189,9 @@ def step_fun(x, x_step, y_step):
         y_step: Vector of step y-values.
 
     Returns:
-        Vector of the same length as `x`, where each element is the value of `y_step` corresponding to the
-            larges value of `x_step` which is less than or equal to `x`.
+        Vector of the same length as `x`, where each element is the value of 
+        `y_step` corresponding to the larges value of `x_step` which is less 
+        than or equal to `x`.
     """
     y = np.empty_like(x)
     ids = x < x_step[-1]
@@ -222,7 +223,7 @@ plt.title("Average CV error vs alpha values")
 plt.xscale("log")
 ```
 
-```{python}
+```py
 alpha_cv = alpha_seq[np.argmin(loss_seq)]  # selected value of alpha
 print(alpha_cv)
 
@@ -248,7 +249,7 @@ Here we have an alpha of 0.00481315396113602 and 36 leaf nodes. Consider we have
 
 ### Testing the tree on test set
 
-```{python}
+```py
 poke_test = pd.read_csv("./data/3-split_data.test.csv")
 poke_test = poke_test.drop(columns=['has_gender'])
 poke_test = poke_test.drop(columns=['type_2'])
@@ -261,7 +262,7 @@ print(clf_pruned.score(X_test, y_test))
 
 So the decision tree is able to predict 79.4% correct in the test set, a good baseline to start with and compare more complex models with it as the project progress
 
-```{python}
+```py
 predictions = clf_pruned.predict(X_test)
 cm = confusion_matrix(y_test, predictions, labels=clf_pruned.classes_)
 display = ConfusionMatrixDisplay(confusion_matrix=cm,
@@ -271,8 +272,4 @@ plt.rcParams['figure.figsize'] = [10, 10]
 display.plot(xticks_rotation='vertical')
 plt.title("Confusion Matrix on Test Data for Trained Pruned Decision Tree")
 plt.show()
-```
-
-```{python}
-
 ```

@@ -20,19 +20,19 @@ This notebook performs a stratified split of the data into test and train sets.
 
 ## Setup
 
-```{python}
+```py
 import pandas as pd
 from sklearn.model_selection import train_test_split
 ```
 
-```{python}
+```py
 IN_PATH = "data/2-generate_features.csv"
 pokedex = pd.read_csv(IN_PATH)
 ```
 
 ## Split
 
-```{python}
+```py
 train, test = train_test_split(
     pokedex,
     test_size=0.2,
@@ -42,19 +42,19 @@ train, test = train_test_split(
 )
 ```
 
-```{python}
+```py
 print(len(train))
 train.head()
 ```
 
-```{python}
+```py
 print(len(test))
 test.head()
 ```
 
 To verify stratification, we count the breakdown per class:
 
-```{python}
+```py
 types = set(pokedex["type_1"])
 for t in types:
     train_count = (train["type_1"] == t).sum()
@@ -65,7 +65,7 @@ for t in types:
 
 ## Save Results
 
-```{python}
+```py
 OUT_PATH = "data/3-split_data"
 TRAIN_PATH = f"{OUT_PATH}.train.csv"
 TEST_PATH = f"{OUT_PATH}.test.csv"
