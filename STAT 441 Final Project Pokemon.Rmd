@@ -1,7 +1,12 @@
 ---
-title: "\\vspace{-1.5cm} Performance of Classification MethodS in Pokemon Type Prediction "
+output:
+  pdf_document: default
+  html_document: default
+---
+---
+title: "\\vspace{-1.5cm} Performance of Classification MethodS in Pokemon Type Prediction"
 author: |
-  | Name1, Name2, Name3, Name4 -- University of Waterloo
+  | Allen Zheng, Jerry Zhen, Justin Xu, Ryan Wu -- University of Waterloo
 geometry: "left=2cm,right=2cm,top=2cm,bottom=2cm"
 output:
   bookdown::pdf_document2:
@@ -44,7 +49,7 @@ get_upper_tri <- function(cormat){
 
 # Research Problem
 
-Pokémon is one of the most popular games worldwide where players catch and train monsters known as Pokémon. As each Pokémon has its own types, it raises people’s interest in Pokémon type prediction based on other attributes of the Pokemon. However, many of the attempts failed as people have a limited number of observations due to game release or they limited the attributes used. In our study, we examine how prediction results change by including more Pokémon (including variants) up to Gen VIII and using a larger set of attributes. We also wish to evaluate the performance of different classification methods and are looking forward to predicting the second type of Pokémon.
+Pokemon is one of the most popular games where players catch and train monsters known as Pokemon, and use them to battle other trainers. Each Pokemon has one or two types, such as “Water” and “Fire”. Certain types have advantages against others in combat; for example, Water-type Pokemon deal increased damage to Fire-type Pokemon. Thus, type is an attribute of interest for Pokemon players. We are interested in using classification techniques to understand the relationship between a Pokemon’s type and its attributes.
 
 # Dataset
 
@@ -53,14 +58,14 @@ We created our own scrapers using the Python libraries `requests`, `beautifulsou
 
 ```{r,echo=F}
 # Load and modify data
-pokemon <- read.csv("C:/Users/Kkda/Desktop/Final Project/pokemon_train.csv",header=T)
+pokemon <- read.csv("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/data/3-split_data.train.csv",header=T)
 pokemon[sapply(pokemon, is.character)] <- lapply(pokemon[sapply(pokemon, is.character)],as.factor)
 # The numeric features
 pokemon_numeric = pokemon[sapply(pokemon, is.numeric)]
 ```
 
 # Exploratory Data Analysis
-We briefly examine the average of numerical features of Pokemons in each type:
+We briefly examine the average of numerical features of Pokemon in each type:
 ```{r,echo = F,fig.align='center',fig.dim=c(17,7)}
 # Do the group means
 pokemon_strength = pokemon_numeric[,20:37] # The weakness feature
@@ -91,58 +96,131 @@ ggplot(df, aes(x = feature, y=mean, group=type))+
 ```
 By inspection, the weakness of Pokemons varies greatly across different types. This provides a good indicator for __Decision Trees__ to split the data and makes it a good reference in evaluating the performance of other models.
 
+# Feature Importance
+
+To solve this classification task, we first aim to determine the feature importance of the data using methods such as Random Forest (library randomForest) and the Boruta algorithm (library Boruta) in R. With the hope of reducing our feature space, we improve the model accuracy and convergence by eliminating redundant and irrelevant features. In addition, this can avoid overfitting with less complex models by having fewer weights in the models.
+
+In a Random Forest model, variable importance can be measured using the permutation-based difference in out of bag error (or mean decrease in accuracy). The Boruta algorithm uses this to perform feature selection. For each feature in the original dataset, we shuffle its observed values to produce a permuted “shadow feature”. Fitting a Random Forest on both the features and their shadows, features that are chosen more often than any other shadow feature are selected. The algorithm repeats this many times, measuring the importance of each feature by how frequently it is selected. The highest-frequency features are accepted, the lowest-frequency features are rejected, and everything in between is considered tentative. Refer to appendix 2 and 3 for the respective plots of feature importance.
+
 # Overview of Classification Method
 
-  - __Feature Elimination__: We determine the feature importance of the data using __Random Forest__, __Recursive Feature Elimination__ and the __Boruta algorithm__. This will reduce the feature space and avoid overfitting. More importantly, it gives a concise model for interpretation.
-  
-  - __Model fitting__: We fit different models using the selected features after the feature elimination. The models considered includes __Logistic Regression__, __Decision Tree__, __Random Forest__, __Neural Networks__ and __SVM__. The models will be fit using packages from __R__ and __Python__.
+After performing feature importance analysis, we will be able to fit different models on the dataset. The methods that can be used in the scope of this class are Logistic Regression, Decision Tree, Random Forest, Neural Networks, and Support Vector Machine. We will be using both R and Python as primary coding languages. For Logistic Regression, we will implement it with R. For all other models, we will implement them in Python with combinations of Sci-kit Learn, TensorFlow, and PyTorch. 
+Given the large number of features and classes in the dataset, we believe Decision Tree will be able to provide a reasonable baseline which all other models, such as tree-based ensemble methods and neural networks can be contrasted against.
 
-    From the __Exploratory Data Analysis__, we see the weakness of Pokemons varies greatly across different types. We believe this provides a good indicator for __Decision Trees__ to split the data, hence, making it a reasonable reference in evaluating the performance of other models.
+To compare the difference in model performance, we will apply the nested cross-validation (CV) approach to the different models. The dataset will be split into 10 stratified sets, where we want to have an even split in terms of y-value to guarantee the model is trained and evaluated on all existing classes with the original data distribution, and we take out 1 set in the outer CV each time. Then, we will do the inner CV with the other 9 sets by splitting them into 10 stratified sets. The error for the inner CV will allow us to select the best tuning parameters, and use the tuning parameters to find the best model parameter in the outer CV. The different models with the optimal tuning and model parameters will be compared by using their average CV error across all outer folds as an estimated expected error across the entire dataset.
 
-```{r,echo = F,fig.align='center',fig.dim=c(14,5)}
+# Prelimary Results
+
+We opted to have a decision tree as our baseline. Using a 5-fold cross-validation on the training set, we were able to plot the error vs alpha values for each fold and the average CV error vs alpha values, illustrated in appendix 4 and below respectively.
+```{r,out.width = "300px", echo = F, fig.align='center'}
+knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/CV-Loss-vs-Alpha.png")
+```
+
+The optimal alpha is 0.004813. We then used this optimal alpha to generate an optimal decision tree, which has 36 leaf nodes. This tree is then evaluated on the test set, which achieved a 79.4% prediction accuracy. A confusion matrix is also plotted in Appendix 5. We can see that most of the predictions are really good. This decision tree model does not do well with Bug-type Pokemon and often classifies them as other classes. The model also predicts some Pokemon as Water Type and Steel Type while they are actually not. These predictions may be improved by other models that we plan to train. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+
+# Appendix
+
+Appendix 1
+```{r}
+# Correlation heat map between numeric variables
+pokemon_numeric = pokemon[sapply(pokemon, is.numeric)]
+pokemon_info = pokemon_numeric[,1:19] # Ignore the type strength/weakness
+# Calculate correlation matrix
+cormat <- round(cor(pokemon_info),3)
+# Reorder correlation matrix
+cormat <- reorder_cormat(cormat)
+# Obtain the upper triangular correlation matrix
+upper_tri <- get_upper_tri(cormat)
+# Reshape the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+# Create heat map
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "#ECF0F1")+
+  scale_fill_gradient2(low = "#1F6CFA", high = "#FB4941", mid = "#FFFFFF", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()+
+  labs(title="Correlation Heat Map")+
+  theme(plot.title=element_text(hjust=0.5))
+# Print the heatmap
+print(ggheatmap)
+```
+
+Appendix 2
+```{r}
 # Random Forest for Variable Importance
 # Removing 'type_2' 
 pokemon_rf <- randomForest(type_1 ~., data = pokemon[,-5], importance = TRUE)
 
-feat_imp <- importance(pokemon_rf) %>% 
-  data.frame() %>% 
-  mutate(feature = row.names(.)) 
-
-ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseGini), 
-                         y = MeanDecreaseGini)) +
-    geom_bar(stat='identity', fill = "#1F6CFA") +
-    coord_flip() +
-    labs(
-      x     = "Feature",
-      y     = "Relative Importance",
-      title = "Feature Importance From Random Forest"
-    ) 
-```
-
-```{r}
-# RFE loading from RDS file since takes too long to run
-rfe_p <- readRDS("rfe_output.rds")
-print(paste0('Eliminated Variable: ', setdiff(colnames(pokemon[,-c(4,5)]), rfe_p$optVariables)))
-```
-
-```{r}
 # Boruta algorithm
 b1 <- Boruta(pokemon[,-c(4,5)], pokemon[,4])
-```
 
+b1_imp <- data.frame(colMeans(b1$ImpHistory))
+colnames(b1_imp) <- "Mean"
+b1_imp[b1_imp$Mean == '-Inf',] <- -1
+
+b1_imp <- b1_imp %>%
+  mutate(feature = row.names(.)) %>%
+  filter(!grepl("shadow", feature))
+
+b1_imp$decision <- b1$finalDecision
+
+ggplot(b1_imp, aes(x = reorder(feature, Mean),
+                   y = Mean,
+                   fill = decision)) + 
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  labs(x = "Feature",
+       y = "Importance",
+       title = "Importance of Variables by the Boruta Algorithm")
+```
+Appendix 3
 ```{r}
-# Display summary of b1
-b1
+# Random Forest Feature Importance Plot
+feat_imp <- data.frame(importance(pokemon_rf)) %>% 
+  mutate(feature = row.names(.)) 
+
+ggplot(feat_imp, aes(x = reorder(feature, MeanDecreaseAccuracy), 
+                     y = MeanDecreaseAccuracy)) +
+    geom_bar(stat='identity', fill = "#1F6CFA") +
+    coord_flip() +
+    labs(x = "Feature",
+         y = "Relative Importance",
+         title = "Feature Importance From Random Forest") 
+
+```
+Appendix 4
+```{r, out.width = "300px", echo = F, fig.align='center'}
+knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/CV-Error-vs-Alpha-5-fold.png")
+```
+Appendix 5
+```{r, out.width = "300px", echo = F, fig.align='center'}
+knitr::include_graphics("/Users/ryanwu/Desktop/School/STAT 441/pokemon-type-classification/Figures/Confusion-Matrix.png")
 ```
 
-From a collective standpoint, the features selected to be insignificant would be 'has_gender', 'sprite_overflow_horizontal', 'sprite_overflow_vertical', 'sprite_size'. In retrospect, the decisions make sense since has_gender is a TRUE/FALSE variable corresponding to whether a pokemon has a gender, from the game data very few pokemon are genderless so it would seem insignificant. The respective 'sprite' variables up for elimination are all based off the pokemon's sprite or pixel image in game, overflow relates to when the sprite is so big that it gets clipped off based off the general image format. Thus it would also make sense that these variables would not be very useful in trying to predict pokemon type since only physically massive pokemon would have this variable set to TRUE or 1. 
 
 
-# Decision Tree
-```{r}
-# Build decision trees here
-```
-# Summary
 
-# Appendix
+
+
+
 
