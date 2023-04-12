@@ -5,3 +5,5 @@ Created on Sat Apr  8 17:00:20 2023
 @author: zhang
 """
 
+from .model import Model, Config
+from .svm import SVMModel
