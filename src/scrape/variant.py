@@ -9,6 +9,14 @@ from .util.soup import parse_int, parse_percent, parse_str
 
 class Variant:
     PROPERTIES = [
+        "abilities_number",
+        "total_points",
+        "hp",
+        "attack",
+        "defense",
+        "sp_attack",
+        "sp_defense",
+        "speed",
         "base_experience",
         "base_friendship",
         "catch_rate",
@@ -42,12 +50,53 @@ class Variant:
         self._soup = soup
         self._sprite = sprite
 
+    def _get_cell(self, label: str) -> BeautifulSoup:
+        return self._soup.find("th", string=label).find_next_sibling("td")
+
+    @cached_property
+    def abilities_number(self) -> int:
+        return len(self._get_cell("Abilities").find_all("br"))
+
+    @cached_property
+    def hp(self) -> int:
+        return parse_int(self._get_cell("HP"))
+
+    @cached_property
+    def attack(self) -> int:
+        return parse_int(self._get_cell("Attack"))
+
+    @cached_property
+    def defense(self) -> int:
+        return parse_int(self._get_cell("Defense"))
+
+    @cached_property
+    def sp_attack(self) -> int:
+        return parse_int(self._get_cell("Sp. Atk"))
+
+    @cached_property
+    def sp_defense(self) -> int:
+        return parse_int(self._get_cell("Sp. Def"))
+
+    @cached_property
+    def speed(self) -> int:
+        return parse_int(self._get_cell("Speed"))
+
+    @cached_property
+    def total_points(self) -> int:
+        total = parse_int(self._get_cell("Total"))
+        assert total == (
+            self.hp
+            + self.attack
+            + self.defense
+            + self.sp_attack
+            + self.sp_defense
+            + self.speed
+        )
+        return total
+
     @cached_property
     def catch_rate(self) -> int:
-        cell = self._soup \
-            .find("th", string="Catch rate") \
-            .find_next_sibling("td")
-        return parse_int(cell)
+        return parse_int(self._get_cell("Catch rate"))
 
     @cached_property
     def base_friendship(self) -> int:
@@ -59,32 +108,21 @@ class Variant:
 
     @cached_property
     def base_experience(self) -> int:
-        cell = self._soup \
-            .find("th", string="Base Exp.") \
-            .find_next_sibling("td")
-        return parse_int(cell)
+        return parse_int(self._get_cell("Base Exp."))
 
     @cached_property
     def growth_rate(self) -> str:
-        cell = self._soup \
-            .find("th", string="Growth Rate") \
-            .find_next_sibling("td")
-        return parse_str(cell)
+        return parse_str(self._get_cell("Growth Rate"))
 
     @cached_property
     def percentage_male(self) -> float | None:
-        cell = self._soup \
-            .find("th", string="Gender") \
-            .find_next_sibling("td")
+        cell = self._get_cell("Gender")
         s = parse_str(cell)
         return None if s == "Genderless" else parse_percent(cell)
 
     @cached_property
     def egg_cycles(self) -> int:
-        cell = self._soup \
-            .find("th", string="Egg cycles") \
-            .find_next_sibling("td")
-        return parse_int(cell)
+        return parse_int(self._get_cell("Egg cycles"))
 
     @cached_property
     def sprite_size(self) -> float:
