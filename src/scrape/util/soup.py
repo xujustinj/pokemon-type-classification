@@ -36,6 +36,10 @@ def parse_int(soup: BeautifulSoup) -> int:
     return int(parse_str(soup).split()[0])
 
 
+def parse_float(soup: BeautifulSoup) -> int:
+    return float(parse_str(soup).split()[0])
+
+
 def parse_percent(soup: BeautifulSoup) -> float:
     raw = parse_str(soup).split()[0]
     assert raw.endswith("%")
