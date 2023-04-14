@@ -21,7 +21,7 @@ M = TypeVar("M", bound=Model)
 
 def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=8):
     # load training dataset
-    poke_data = pd.read_csv("../data/2-generate_features.csv")
+    poke_data = pd.read_csv("../data/scrape_from_scratch.csv")
     poke_data = poke_data.drop(columns=['has_gender'])
     poke_data = poke_data.drop(columns=['type_2'])
     print(poke_data.shape)
