@@ -7,6 +7,9 @@ from .util.sprite import Sprite
 from .util.soup import parse_float, parse_int, parse_percent, parse_str
 
 
+REGIONAL_PREFIXES = ["Galarian", "Alolan"]
+
+
 class Variant:
     PROPERTIES = [
         "type_number",
@@ -25,6 +28,7 @@ class Variant:
         "catch_rate",
         "base_friendship",
         "base_experience",
+        "maximum_experience",
         "egg_type_number",
         "has_gender",
         "proportion_male",
@@ -69,7 +73,7 @@ class Variant:
     def __init__(
         self,
         pokemon_name: str,
-        variant_name: str,
+        variant_name: str | None,
         soup: BeautifulSoup,
         sprite: Sprite
     ):
@@ -77,6 +81,18 @@ class Variant:
         self.variant_name = variant_name
         self._soup = soup
         self._sprite = sprite
+
+    @cached_property
+    def full_name(self) -> str:
+        if self.variant_name is None:
+            return self.pokemon_name
+        if self.pokemon_name in self.variant_name:
+            return self.variant_name
+        for prefix in REGIONAL_PREFIXES:
+            if self.variant_name.startswith(prefix):
+                variant_name_rest = self.variant_name[len(prefix):].strip()
+                return f'{prefix} {self.pokemon_name} {variant_name_rest}'
+        return f'{self.pokemon_name} {self.variant_name}'
 
     def _get_cell(self, label: str) -> BeautifulSoup:
         return self._soup.find("th", string=label).find_next_sibling("td")
@@ -104,8 +120,11 @@ class Variant:
         return parse_float(self._get_cell("Height"))
 
     @ cached_property
-    def weight_kg(self) -> float:
-        return parse_float(self._get_cell("Weight"))
+    def weight_kg(self) -> float | None:
+        cell = self._get_cell("Weight")
+        if parse_str(cell) == "—":
+            return None
+        return parse_float(cell)
 
     @ cached_property
     def abilities_number(self) -> int:
@@ -149,7 +168,10 @@ class Variant:
         return parse_int(self._get_cell("Speed"))
 
     @ cached_property
-    def catch_rate(self) -> int:
+    def catch_rate(self) -> int | None:
+        cell = self._get_cell("Catch rate")
+        if parse_str(cell) == "—":
+            return None
         return parse_int(self._get_cell("Catch rate"))
 
     @ cached_property
@@ -189,13 +211,13 @@ class Variant:
     def has_gender(self) -> bool:
         cell = self._get_cell("Gender")
         s = parse_str(cell)
-        return not s == "Genderless"
+        return s not in ("Genderless", "—")
 
     @ cached_property
     def proportion_male(self) -> float:
         cell = self._get_cell("Gender")
         s = parse_str(cell)
-        return 0.5 if s == "Genderless" else parse_percent(cell) / 100.
+        return parse_percent(cell) / 100. if self.has_gender else 0.5
 
     @ cached_property
     def egg_cycles(self) -> int:
@@ -212,7 +234,10 @@ class Variant:
         s = parse_str(cell)
         return {
             "4": 4.,
+            "3": 3.,
             "2": 2.,
+            "1½": 1.5,
+            "1.25": 1.25,
             "": 1.,
             "½": 1./2.,
             "¼": 1./4.,
