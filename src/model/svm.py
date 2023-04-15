@@ -17,8 +17,8 @@ class SVMModel(Model):
         self._model = model
 
     def predict(self, X_test):
-        self._model.predict(X_test)
+        return self._model.predict(X_test)
 
     def evaluate(self, X_test, y_test) -> float:
         y_pred = self._model.predict(X_test)
-        return accuracy_score(y_test, y_pred)
+        return float(accuracy_score(y_test, y_pred))

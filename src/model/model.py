@@ -28,7 +28,6 @@ class Model(ABC):
     def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> float:
         pass
 
-    @abstractmethod
     def save(self, path: str) -> None:
         """
         Saves the model to the given path, such that calling load on that same
@@ -37,7 +36,6 @@ class Model(ABC):
         joblib.dump(self, path)
 
     @classmethod
-    @abstractmethod
     def load(cls: Type[Self], path: str) -> Self:
         model = joblib.load(path)
         assert isinstance(model, cls)

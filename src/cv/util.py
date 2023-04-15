@@ -32,8 +32,9 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
         remainder='passthrough',
         verbose_feature_names_out=False)
 
-    X: np.ndarray = ct.fit_transform(poke_data.drop(columns=['type_1']))
+    X = ct.fit_transform(poke_data.drop(columns=['type_1']))
     y: np.ndarray = poke_data['type_1'].to_numpy()
+    assert isinstance(X, np.ndarray)
     print(X.shape)
     print(y.shape)
     model_config_columns = list(model_configs[0].keys())
@@ -81,12 +82,10 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
                 print("Building Model")
                 model = trainer.train(
                     X_train_inner, y_train_inner, model_config)
-                predictions = model.predict(X_test_inner)
-                fold_metrics.append(model.evaluate(predictions, y_test_inner))
+                fold_metrics.append(model.evaluate(X_test_inner, y_test_inner))
 
             fold_metrics = np.array(fold_metrics)
-
-        all_metrics.append(fold_metrics)
+            all_metrics.append(fold_metrics)
 
         all_metrics = np.array(all_metrics)
         average_inner_cv_error = np.average(all_metrics, axis=0)
@@ -96,8 +95,7 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
             X_train_outer, y_train_outer, best_model_config)
         model.save(folder + "cv" + str(i) + ".mdl")
         i += 1
-        predictions = model.predict(X_test_outer)
-        acc_score = model.evaluate(predictions, y_test_outer)
+        acc_score = model.evaluate(X_test_outer, y_test_outer)
 
         RESULT_LIST = []
         for k in model_config_columns:
