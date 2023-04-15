@@ -7,4 +7,5 @@ Created on Sat Apr  8 17:00:20 2023
 
 from .model import Model, Config
 
+from .lr import LRModel
 from .svm import SVMModel
