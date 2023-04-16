@@ -9,3 +9,4 @@ from .model import Model, Config
 
 from .lr import LRModel
 from .svm import SVMModel
+from .rf import RFModel
