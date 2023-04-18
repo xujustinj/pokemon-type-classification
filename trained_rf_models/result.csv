@@ -1,0 +1,6 @@
+,n_estimators,criterion,max_features,acc_scores
+0,500,gini,sqrt,0.9620853080568721
+1,500,gini,sqrt,0.919431279620853
+2,500,gini,sqrt,0.957345971563981
+3,500,gini,sqrt,0.8862559241706162
+4,500,gini,sqrt,0.9619047619047619
