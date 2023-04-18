@@ -9,9 +9,11 @@ from typing import Any, TypeVar
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from model import Model, Config
 from train import Trainer
@@ -23,7 +25,7 @@ NCOL = 54
 NFEAT = 74
 
 
-def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=8):
+def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, name, n_folds=8):
     NCONFIG = len(model_configs)
 
     # load training dataset
@@ -56,6 +58,9 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
 
     model_config_columns = list(model_configs[0].keys())
     RESULT_LISTS = []
+    CONFUSION_PRED = []
+    CONFUSION_TRUE = []
+    CLASSES = []
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -119,6 +124,7 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
             config=best_model_config)
         model.save(os.path.join(folder, f"cv-{outer_idx+1}.mdl"))
         acc_score = model.evaluate(X_test_outer, y_test_outer)
+        pred = model.predict(X_test_outer)
 
         RESULT_LIST = []
         for k in model_config_columns:
@@ -126,7 +132,23 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, n_folds=
         RESULT_LIST.append(acc_score)
         RESULT_LISTS.append(RESULT_LIST)
 
+        CONFUSION_PRED.extend(pred)
+        CONFUSION_TRUE.extend(y_test_outer)
+        if len(CLASSES) == 0: 
+            CLASSES=model.labels()
+       
+    cm = confusion_matrix(CONFUSION_TRUE, CONFUSION_PRED, labels=CLASSES)
+    display = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                     display_labels=CLASSES)
+
+    plt.rcParams['figure.figsize'] = [10, 10]
+    plt.figure(figsize=(10,10))
+    display.plot(xticks_rotation='vertical')
+    plt.title(f"Confusion Matrix on Test Data for {name}")
+    plt.savefig(os.path.join(folder, "conf_matrix.png"))
+    plt.show()
     model_config_columns.append("acc_scores")
     result_df = pd.DataFrame(RESULT_LISTS, columns=model_config_columns)
     result_df.to_csv(os.path.join(folder, "result.csv"))
     print(np.average(result_df['acc_scores']))
+

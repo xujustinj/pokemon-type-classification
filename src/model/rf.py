@@ -15,3 +15,6 @@ class RFModel(Model):
     def evaluate(self, X_test, y_test) -> float:
         y_pred = self._model.predict(X_test)
         return float(accuracy_score(y_test, y_pred))
+    
+    def labels(self):
+        return self._model.classes_
