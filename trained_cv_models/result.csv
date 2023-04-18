@@ -1,0 +1,6 @@
+,C,kernel,degree,gamma,probability,decision_function_shape,acc_scores
+0,1.0,linear,1,scale,False,ovr,0.933649289099526
+1,1.0,linear,1,scale,False,ovr,0.9241706161137441
+2,1.0,linear,1,scale,False,ovr,0.966824644549763
+3,1.0,linear,1,scale,False,ovr,0.9004739336492891
+4,1.0,linear,1,scale,False,ovr,0.9666666666666667
