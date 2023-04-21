@@ -1,22 +1,16 @@
 import os
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
-from sklearn.compose import ColumnTransformer, make_column_selector
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from model import Model, Config
-from .tuner import Tuner, SearchSpace, Splitter
+from util import load_data
+from .tuner import Tuner, SearchSpace
 
 M = TypeVar("M", bound=Model)
 
-NROW = 1054
-NCOL = 54
-NFEAT = 74
-
-DATA_PATH = "../data/scrape_from_scratch.csv"
 BASE_MODEL_DIR = "../models/"
 
 
@@ -26,39 +20,12 @@ def outer_cv(
     name,
     n_folds_outer=5,
     n_folds_inner=5,
-):
-    # load training dataset
-    poke_data = pd.read_csv(DATA_PATH)
-    assert poke_data.shape == (NROW, NCOL)
-
-    MODEL_DIR = os.path.join(BASE_MODEL_DIR, name)
-
-    ct = ColumnTransformer(
-        [
-            (
-                "normalize",
-                StandardScaler(),
-                make_column_selector(dtype_include=np.number)  # type: ignore
-            ),
-            (
-                "onehot",
-                OneHotEncoder(),
-                make_column_selector(dtype_include=object),  # type: ignore
-            ),
-        ],
-        remainder='passthrough',
-        verbose_feature_names_out=False,
-    )
-
-    X = ct.fit_transform(poke_data.drop(columns=['type_1']))
-    assert isinstance(X, np.ndarray)
-    assert X.shape == (NROW, NFEAT)
-
-    y: np.ndarray = poke_data['type_1'].to_numpy()
-    assert y.shape == (NROW,)
+) -> float:
+    X, y = load_data()
 
     configs: list[Config] = []
 
+    MODEL_DIR = os.path.join(BASE_MODEL_DIR, name)
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR)
 

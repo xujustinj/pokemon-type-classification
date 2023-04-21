@@ -11,51 +11,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
-from sklearn.compose import ColumnTransformer, make_column_selector
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from model import Model, Config
 from train import Trainer
+from util import load_data
 
 M = TypeVar("M", bound=Model)
 
-NROW = 1054
-NCOL = 54
-NFEAT = 74
-
 
 def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, name, n_folds=8):
+    X, y = load_data()
+
     NCONFIG = len(model_configs)
-
-    # load training dataset
-    poke_data = pd.read_csv("../data/scrape_from_scratch.csv")
-    assert poke_data.shape == (NROW, NCOL)
-
-    ct = ColumnTransformer(
-        [
-            (
-                "normalize",
-                StandardScaler(),
-                make_column_selector(dtype_include=np.number)  # type: ignore
-            ),
-            (
-                "onehot",
-                OneHotEncoder(),
-                make_column_selector(dtype_include=object),  # type: ignore
-            ),
-        ],
-        remainder='passthrough',
-        verbose_feature_names_out=False,
-    )
-
-    X = ct.fit_transform(poke_data.drop(columns=['type_1']))
-    assert isinstance(X, np.ndarray)
-    assert X.shape == (NROW, NFEAT)
-
-    y: np.ndarray = poke_data['type_1'].to_numpy()
-    assert y.shape == (NROW,)
-
     model_config_columns = list(model_configs[0].keys())
     RESULT_LISTS = []
     CONFUSION_PRED = []
@@ -134,9 +102,9 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, name, n_
 
         CONFUSION_PRED.extend(pred)
         CONFUSION_TRUE.extend(y_test_outer)
-        if len(CLASSES) == 0: 
+        if len(CLASSES) == 0:
             CLASSES=model.labels()
-       
+
     cm = confusion_matrix(CONFUSION_TRUE, CONFUSION_PRED, labels=CLASSES)
     display = ConfusionMatrixDisplay(confusion_matrix=cm,
                                      display_labels=CLASSES)
@@ -151,4 +119,3 @@ def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, name, n_
     result_df = pd.DataFrame(RESULT_LISTS, columns=model_config_columns)
     result_df.to_csv(os.path.join(folder, "result.csv"))
     print(np.average(result_df['acc_scores']))
-
