@@ -18,6 +18,10 @@ Config = dict[str, Any]
 
 class Model(ABC):
     def __init__(self, config: Config):
+        assert isinstance(config, dict)
+        for k in config.keys():
+            assert isinstance(k, str)
+
         self.config = config
 
     @abstractmethod

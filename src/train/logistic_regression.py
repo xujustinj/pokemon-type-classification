@@ -1,9 +1,9 @@
 from typing import Literal
 
-from sklearn import linear_model
 import numpy as np
+from sklearn.linear_model import LogisticRegression as SKLogisticRegression
 
-from model import Config, LRModel
+from model import Config, LogisticRegressionModel
 from .trainer import Trainer
 
 
@@ -11,21 +11,18 @@ MultiClass = Literal["auto", "ovr", "multinomial"]
 Penalty = Literal["l1", "l2", "elasticnet"] | None
 
 
-class LRTrainer(Trainer[LRModel]):
-    def __init__(self):
-        super().__init__()
-
+class LRTrainer(Trainer[LogisticRegressionModel]):
     def train(
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
         config: Config,
-    ) -> LRModel:
+    ) -> LogisticRegressionModel:
         multi_class: MultiClass = config.get("multi_class", "auto")
         penalty: Penalty = config.get("penalty")
         C: float = config.get("C", 1.0)
 
-        model = linear_model.LogisticRegression(
+        model = SKLogisticRegression(
             multi_class=multi_class,
             penalty=penalty,
             C=C,
@@ -35,4 +32,4 @@ class LRTrainer(Trainer[LRModel]):
 
         model.fit(X_train, y_train)
 
-        return LRModel(model, config)
+        return LogisticRegressionModel(model=model, config=config)
