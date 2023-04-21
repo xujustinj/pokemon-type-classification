@@ -3,15 +3,14 @@ from typing import Any, Generic, TypeAlias, TypeVar
 
 import numpy as np
 from sklearn.model_selection import BaseCrossValidator
+from skopt.space import Dimension
 
 from model import Model
 
-Dimension: TypeAlias = tuple | list[Any]
-
-SKSearchSpaceDict: TypeAlias = dict[str, Dimension]
-SKSearchSpaceList: TypeAlias = list[SKSearchSpaceDict |
-                                    tuple[SKSearchSpaceDict, int]]
-SearchSpace: TypeAlias = SKSearchSpaceDict | SKSearchSpaceList
+SearchSpaceDict: TypeAlias = dict[str, Dimension]
+SearchSpaceList: TypeAlias = list[SearchSpaceDict]
+SearchSpaceWeightedList: TypeAlias = list[tuple[SearchSpaceDict, int]]
+SearchSpace: TypeAlias = SearchSpaceDict | SearchSpaceList | SearchSpaceWeightedList
 
 Splitter: TypeAlias = BaseCrossValidator
 

@@ -3,9 +3,9 @@ from typing import Any
 import numpy as np
 from sklearn.linear_model import LogisticRegression as SKLearnLogisticRegression
 from sklearn.model_selection import BaseCrossValidator
-from skopt import BayesSearchCV
 
 from model import LogisticRegressionModel
+from .bayes import BayesSearchCV
 from .tuner import Tuner, SearchSpace, Splitter
 
 
