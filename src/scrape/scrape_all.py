@@ -32,6 +32,17 @@ if not path.exists(SPRITE_CACHE_DIR):
 
 
 def safe_name(pokemon_name: str, variant_name: str | None = None) -> str:
+    """Get the safe name for a Pokemon
+
+    Get the safe name for a Pokemon given its Pokemon name and its variant name. 
+
+    Args:
+        pokemon_name (str): The Pokemon's name
+        variant_name (str): The Pokemon's variant's name
+
+    Return: 
+        str: Pokemon's safe name
+    """
     name = (
         pokemon_name if variant_name is None
         else f'{pokemon_name}+{variant_name}'
@@ -44,6 +55,16 @@ def safe_name(pokemon_name: str, variant_name: str | None = None) -> str:
 
 
 def fetch_pokemon_soup(dex_path: str) -> BeautifulSoup:
+    """Fetch the Pokemon's data. 
+
+    Fetch the Pokemon's data. 
+
+    Args:
+        dex_path (str): The website path to the Pokemon's data
+
+    Return: 
+        BeautifulSoup: The html of the Pokemon's data
+    """
     url = path.join(POKEDEX_URL, dex_path)
     cache_path = path.join(POKEMON_CACHE_DIR, f"{dex_path}.html")
     return fetch_soup(url=url, cache_path=cache_path)
@@ -54,6 +75,18 @@ def fetch_variant_sprite(
     pokemon_name: str,
     variant_name: str | None,
 ) -> Sprite:
+    """Fetch the Pokemon's variant's sprite. 
+
+    Fetch the Pokemon's variant's sprite. 
+
+    Args:
+        url (str): The website url
+        pokemon_name (str): The Pokemon's name
+        variant_name (str): The Pokemon's variant's name
+
+    Return: 
+        Sprite: The Pokemon's variant's small picture representation
+    """
     cache_path = path.join(
         SPRITE_CACHE_DIR,
         f"{safe_name(pokemon_name, variant_name)}.png"
@@ -66,6 +99,18 @@ def get_variant_soup(
     pokemon_name: str,
     variant_name: str,
 ) -> BeautifulSoup:
+    """Fetch the Pokemon's variant's sprite. 
+
+    Fetch the Pokemon's variant's sprite. 
+
+    Args:
+        pokemon_soup (BeautifulSoup): The Pokemon's data
+        pokemon_name (str): The Pokemon's name
+        variant_name (str): The Pokemon's variant's name
+
+    Return: 
+        BeautifulSoup: The Pokemon's variant's data
+    """
     cache_path = path.join(
         VARIANT_CACHE_DIR,
         f"{safe_name(pokemon_name, variant_name)}.html"
@@ -85,6 +130,13 @@ def get_variant_soup(
 
 
 def all_variants() -> Iterator[Variant]:
+    """Return all Pokemons' variants' data. 
+
+    Return all Pokemons' variants' data.
+
+    Return: 
+        Iterator[Variant]: All Pokemons' variant's data
+    """
     page = fetch_soup(
         url=path.join(POKEDEX_URL, "all"),
         cache_path=path.join(BASE_CACHE_DIR, "all.html"),
