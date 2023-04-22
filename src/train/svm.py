@@ -22,6 +22,20 @@ class SVMTrainer(Trainer[SVMModel]):
         y_train: np.ndarray,
         config: Config,
     ) -> SVMModel:
+        """Train a support vector classifier model.
+
+        Train a support vector classifier model given the X-values and y-values of the training data 
+        and the model hyperparameters.
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            config (Config): model hyperparameters
+
+        Returns:
+            SVMModel: the trained support vector classifier model
+
+        """
         C = config['C']
         kernel = config['kernel']
         degree = config['degree']

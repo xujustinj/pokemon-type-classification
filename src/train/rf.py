@@ -15,6 +15,20 @@ class RFTrainer(Trainer[RFModel]):
         y_train: np.ndarray,
         config: Config,
     ) -> RFModel:
+        """Train a random forest classifier model.
+
+        Train a random forest classifier model given the X-values and y-values of the training data 
+        and the model hyperparameters.
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            config (Config): model hyperparameters
+
+        Returns:
+            RFModel: the trained random forest classifier model
+
+        """
         n_estimators = config['n_estimators']
         criterion = config['criterion']
         max_features = config['max_features']

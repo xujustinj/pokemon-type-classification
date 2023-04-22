@@ -18,6 +18,20 @@ class LRTrainer(Trainer[LogisticRegressionModel]):
         y_train: np.ndarray,
         config: Config,
     ) -> LogisticRegressionModel:
+        """Train a logistic regression model.
+
+        Train a logistic regression model given the X-values and y-values of the training data 
+        and the model hyperparameters.
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            config (Config): model hyperparameters
+
+        Returns:
+            LogisticRegressionModel: the trained logistic regression model
+
+        """
         multi_class: MultiClass = config.get("multi_class", "auto")
         penalty: Penalty = config.get("penalty")
         C: float = config.get("C", 1.0)
