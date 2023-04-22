@@ -21,6 +21,22 @@ M = TypeVar("M", bound=Model)
 
 
 def nested_cv(trainer: Trainer[M], model_configs: list[Config], folder, name, n_folds=8):
+    """Apply nested cross validation and find average cross validation accuracy. 
+
+    Apply nested cross validation and find average cross validation accuracy 
+    to one model type with hyperparamater tuning in inner folds. 
+
+    Args:
+        trainer (Trainer[M]): trainer for model type M
+        model_configs (list[Config]): list of sets of model hyperparameters
+        folder (str): the folder path used to store results
+        name (str): model name
+        n_folds(int): number of folds
+
+    Returns:
+        Iterator[dict[str, Any]]: sets of hyperparameters
+
+    """
     X, y = load_data()
 
     NCONFIG = len(model_configs)

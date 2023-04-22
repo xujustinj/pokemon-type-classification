@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Apr  8 16:33:29 2023
-
-@author: zhang
-"""
-
 from sklearn import svm
 import numpy as np
 
