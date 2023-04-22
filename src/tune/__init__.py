@@ -6,3 +6,4 @@ from .logistic_regression import (
     LogisticRegressionBayesTuner,
     LogisticRegressionGridTuner,
 )
+from .support_vector_machine import SupportVectorMachineBayesTuner
