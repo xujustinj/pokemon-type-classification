@@ -11,16 +11,20 @@ from .tuner import Tuner, SearchSpace, Splitter
 
 _LOGISTIC_REGRESSION_OPTIONS = dict(
     multi_class="multinomial",
+)
+
+
+_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS = dict(
+    **_LOGISTIC_REGRESSION_OPTIONS,
     penalty="elasticnet",
     solver="saga",
     max_iter=9001,  # practically unlimited
     random_state=441,
 )
 
-
 class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
     """
-    Optimizes logistic regression through Bayesian Optimization.
+    Optimizes logistic regression through Bayesian optimization.
     """
     def tune(
         self,
@@ -31,7 +35,7 @@ class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
     ) -> LogisticRegressionModel:
         opt = BayesSearchCV(
             estimator=SKLearnLogisticRegression(
-                **_LOGISTIC_REGRESSION_OPTIONS,
+                **_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS,
                 warm_start=True, # try to speed up optimization
             ),
             scoring="accuracy",
@@ -74,10 +78,50 @@ class LogisticRegressionGridTuner(Tuner[LogisticRegressionModel]):
             cv=split,
             Cs=discretize(C, steps=self._steps_C),
             l1_ratios=discretize(l1_ratio, steps=self._steps_l1_ratio),
-            **_LOGISTIC_REGRESSION_OPTIONS,
+            **_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS,
             **{key: get_value(dim) for key, dim in search.items()}
         )
         model.fit(X_train, y_train)
 
         config = dict(C=model.C_, l1_ratio=model.l1_ratio_)
         return LogisticRegressionModel(model, config=config)
+
+
+_LASSO_LOGISTIC_REGRESSION_OPTIONS = dict(
+    **_LOGISTIC_REGRESSION_OPTIONS,
+    penalty="l1",
+    solver="saga",
+    max_iter=9001,  # practically unlimited
+    random_state=441,
+)
+
+
+class LASSOLogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
+    """
+    Optimizes logistic regression (LASSO) through Bayesian optimization.
+    """
+    def __init__(self, n_iter: int = 50):
+        self._n_iter = n_iter
+
+    def tune(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        search: SearchSpace,
+        split: Splitter,
+    ) -> LogisticRegressionModel:
+        opt = BayesSearchCV(
+            estimator=SKLearnLogisticRegression(
+                **_LASSO_LOGISTIC_REGRESSION_OPTIONS,
+                warm_start=True, # try to speed up optimization
+            ),
+            scoring="accuracy",
+            search_spaces=search,
+            cv=split,
+            n_iter=self._n_iter,
+        )
+        opt.fit(X_train, y_train)
+
+        model: SKLearnLogisticRegression = opt.best_estimator_  # type: ignore
+        best_config: dict[str, Any] = opt.best_params_  # type: ignore
+        return LogisticRegressionModel(model, config=best_config)

@@ -108,18 +108,34 @@ def outer_cv(
     )
 
     outer_splits = list(outer_splitter.split(X, y))
-    with mp.Pool(parallelism) as pool:
-        pool_results = pool.starmap(_outer_cv_fold, [
-            (tuner, search, n_folds_inner, model_dir, X, y, i+1, train_ids, test_ids)
+    if parallelism > 1:
+        with mp.Pool(parallelism) as pool:
+            models = pool.starmap(_outer_cv_fold, [
+                (tuner, search, n_folds_inner, model_dir, X, y, i+1, train_ids, test_ids)
+                for i, (train_ids, test_ids) in enumerate(outer_splits)
+            ])
+    else:
+        models = [
+            _outer_cv_fold(
+                tuner=tuner,
+                search=search,
+                n_folds_inner=n_folds_inner,
+                model_dir=model_dir,
+                X=X,
+                y=y,
+                id=i+1,
+                train_ids=train_ids,
+                test_ids=test_ids
+            )
             for i, (train_ids, test_ids) in enumerate(outer_splits)
-        ])
+        ]
 
     y_pred = y.copy()
-    for (model, accuracy, predictions), (_, test_ids) in zip(pool_results, outer_splits):
+    for (model, accuracy, predictions), (_, test_ids) in zip(models, outer_splits):
         results.append(dict(**model.config, accuracy=accuracy))
         y_pred[test_ids] = predictions
 
-    labels = pool_results[0][0].labels()
+    labels = models[0][0].labels()
     cm = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels)
     display = ConfusionMatrixDisplay(
         confusion_matrix=cm,
