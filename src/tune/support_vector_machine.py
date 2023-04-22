@@ -1,14 +1,14 @@
 from typing import Any
 
 import numpy as np
-from sklearn.svm import SVC as SKSupportVectorClassifier
+from sklearn.svm import SVC
 
-from model import SVMModel
+from model import SupportVectorMachineModel
 from .bayes import BayesSearchCV
 from .tuner import Tuner, SearchSpace, Splitter
 
 
-class SupportVectorMachineBayesTuner(Tuner[SVMModel]):
+class SupportVectorMachineBayesTuner(Tuner[SupportVectorMachineModel]):
     """
     Optimizes logistic regression through Bayesian optimization.
     """
@@ -18,9 +18,9 @@ class SupportVectorMachineBayesTuner(Tuner[SVMModel]):
         y_train: np.ndarray,
         search: SearchSpace,
         split: Splitter,
-    ) -> SVMModel:
+    ) -> SupportVectorMachineModel:
         opt = BayesSearchCV(
-            estimator=SKSupportVectorClassifier(
+            estimator=SVC(
                 probability=True,
                 random_state=441,
                 decision_function_shape="ovr",
@@ -31,6 +31,6 @@ class SupportVectorMachineBayesTuner(Tuner[SVMModel]):
         )
         opt.fit(X_train, y_train)
 
-        model: SKSupportVectorClassifier = opt.best_estimator_  # type: ignore
+        model: SVC = opt.best_estimator_  # type: ignore
         best_config: dict[str, Any] = opt.best_params_  # type: ignore
-        return SVMModel(model, config=best_config)
+        return SupportVectorMachineModel(model, config=best_config)

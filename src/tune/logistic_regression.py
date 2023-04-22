@@ -1,26 +1,12 @@
 from typing import Any
 
 import numpy as np
-from sklearn.linear_model import LogisticRegression as SKLearnLogisticRegression, LogisticRegressionCV
+from sklearn.linear_model import LogisticRegression
 
 from model import LogisticRegressionModel
 from .bayes import BayesSearchCV
-from .dimension import Real, discretize, get_value
 from .tuner import Tuner, SearchSpace, Splitter
 
-
-_LOGISTIC_REGRESSION_OPTIONS = dict(
-    multi_class="multinomial",
-)
-
-
-_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS = dict(
-    **_LOGISTIC_REGRESSION_OPTIONS,
-    penalty="elasticnet",
-    solver="saga",
-    max_iter=9001,  # practically unlimited
-    random_state=441,
-)
 
 class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
     """
@@ -34,8 +20,12 @@ class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
         split: Splitter,
     ) -> LogisticRegressionModel:
         opt = BayesSearchCV(
-            estimator=SKLearnLogisticRegression(
-                **_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS,
+            estimator=LogisticRegression(
+                multi_class="multinomial",
+                penalty="elasticnet",
+                solver="saga",
+                max_iter=9001,  # practically unlimited
+                random_state=441,
                 warm_start=True, # try to speed up optimization
             ),
             scoring="accuracy",
@@ -44,84 +34,6 @@ class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
         )
         opt.fit(X_train, y_train)
 
-        model: SKLearnLogisticRegression = opt.best_estimator_  # type: ignore
-        best_config: dict[str, Any] = opt.best_params_  # type: ignore
-        return LogisticRegressionModel(model, config=best_config)
-
-
-class LogisticRegressionGridTuner(Tuner[LogisticRegressionModel]):
-    """
-    Optimizes logistic regression through grid search.
-    """
-    def __init__(
-        self,
-        steps_C: int,
-        steps_l1_ratio: int,
-    ):
-        self._steps_C = steps_C
-        self._steps_l1_ratio = steps_l1_ratio
-
-    def tune(
-        self,
-        X_train: np.ndarray,
-        y_train: np.ndarray,
-        search: SearchSpace,
-        split: Splitter,
-    ) -> LogisticRegressionModel:
-        assert isinstance(search, dict)
-
-        C = search.pop("C", Real(low=1e-4, high=1e4, prior="log-uniform"))
-        l1_ratio = search.pop("l1_ratio", Real(low=0.0, high=1.0, prior="uniform"))
-
-        model = LogisticRegressionCV(
-            scoring="accuracy",
-            cv=split,
-            Cs=discretize(C, steps=self._steps_C),
-            l1_ratios=discretize(l1_ratio, steps=self._steps_l1_ratio),
-            **_ELASTICNET_LOGISTIC_REGRESSION_OPTIONS,
-            **{key: get_value(dim) for key, dim in search.items()}
-        )
-        model.fit(X_train, y_train)
-
-        config = dict(C=model.C_, l1_ratio=model.l1_ratio_)
-        return LogisticRegressionModel(model, config=config)
-
-
-_LASSO_LOGISTIC_REGRESSION_OPTIONS = dict(
-    **_LOGISTIC_REGRESSION_OPTIONS,
-    penalty="l1",
-    solver="saga",
-    max_iter=9001,  # practically unlimited
-    random_state=441,
-)
-
-
-class LASSOLogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
-    """
-    Optimizes logistic regression (LASSO) through Bayesian optimization.
-    """
-    def __init__(self, n_iter: int = 50):
-        self._n_iter = n_iter
-
-    def tune(
-        self,
-        X_train: np.ndarray,
-        y_train: np.ndarray,
-        search: SearchSpace,
-        split: Splitter,
-    ) -> LogisticRegressionModel:
-        opt = BayesSearchCV(
-            estimator=SKLearnLogisticRegression(
-                **_LASSO_LOGISTIC_REGRESSION_OPTIONS,
-                warm_start=True, # try to speed up optimization
-            ),
-            scoring="accuracy",
-            search_spaces=search,
-            cv=split,
-            n_iter=self._n_iter,
-        )
-        opt.fit(X_train, y_train)
-
-        model: SKLearnLogisticRegression = opt.best_estimator_  # type: ignore
+        model: LogisticRegression = opt.best_estimator_  # type: ignore
         best_config: dict[str, Any] = opt.best_params_  # type: ignore
         return LogisticRegressionModel(model, config=best_config)

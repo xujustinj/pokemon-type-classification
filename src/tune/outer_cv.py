@@ -88,10 +88,10 @@ def outer_cv(
     name: str,
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
-    parallelism: int = _PARALLELISM,
+    n_jobs: int = 1,
 ) -> float:
-    parallelism = min(parallelism, n_folds_outer)
-    print(f"Outer CV using {parallelism} cores")
+    n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold
+    print(f"Outer CV using {n_jobs} cores")
 
     X, y = load_data()
     results: list[dict[str, Any]] = []
@@ -108,8 +108,8 @@ def outer_cv(
     )
 
     outer_splits = list(outer_splitter.split(X, y))
-    if parallelism > 1:
-        with mp.Pool(parallelism) as pool:
+    if n_jobs > 1:
+        with mp.Pool(n_jobs) as pool:
             models = pool.starmap(_outer_cv_fold, [
                 (tuner, search, n_folds_inner, model_dir, X, y, i+1, train_ids, test_ids)
                 for i, (train_ids, test_ids) in enumerate(outer_splits)

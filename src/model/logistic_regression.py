@@ -1,21 +1,21 @@
 from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression as SKLogisticRegression
+from sklearn.linear_model import LogisticRegression
 
 from .model import Model, Config
 
 
 class LogisticRegressionModel(Model):
-    def __init__(self, model: SKLogisticRegression, config: Config):
+    def __init__(self, model: LogisticRegression, config: Config):
         """Initialize a logistic regression model given model configuration and a logistic regression model instance.
 
         Initialize a logistic regression model given model configuration and a logistic regression model instance.
 
         Args:
-            model (SKLogisticRegression): A logistic regression model instance
+            model (LogisticRegression): A logistic regression model instance
             config (Config): A config specifying the hyperparameters for each model
 
         """
-        assert isinstance(model, SKLogisticRegression)
+        assert isinstance(model, LogisticRegression)
 
         super().__init__(config)
         self._model = model

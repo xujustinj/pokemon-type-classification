@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr  7 22:54:57 2023
-
-@author: zhang
-"""
-
 from abc import ABC, abstractmethod
 import joblib
 from typing import Any, Type, TypeVar
@@ -78,7 +71,7 @@ class Model(ABC):
     def save(self, path: str) -> None:
         """Save the model to the specified path.
 
-        Save the model to the specified path. The directories must exist already. 
+        Save the model to the specified path. The directories must exist already.
 
         Args:
             path (str): The path, including the filename, where the model will be stored
@@ -90,7 +83,7 @@ class Model(ABC):
     def load(cls: Type[Self], path: str) -> Self:
         """Load model given the model path.
 
-        Load the model given the model path with joblib. 
+        Load the model given the model path with joblib.
 
         Args:
             path (str): The path, including the filename, where the model will be stored

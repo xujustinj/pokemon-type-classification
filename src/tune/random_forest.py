@@ -1,14 +1,14 @@
 from typing import Any
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier as SKRandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
 
-from model import RFModel
+from model import RandomForestModel
 from .bayes import BayesSearchCV
 from .tuner import Tuner, SearchSpace, Splitter
 
 
-class RandomForestBayesTuner(Tuner[RFModel]):
+class RandomForestBayesTuner(Tuner[RandomForestModel]):
     """
     Optimizes logistic regression through Bayesian optimization.
     """
@@ -18,9 +18,9 @@ class RandomForestBayesTuner(Tuner[RFModel]):
         y_train: np.ndarray,
         search: SearchSpace,
         split: Splitter,
-    ) -> RFModel:
+    ) -> RandomForestModel:
         opt = BayesSearchCV(
-            estimator=SKRandomForestClassifier(
+            estimator=RandomForestClassifier(
                 random_state=441,
             ),
             scoring="accuracy",
@@ -29,6 +29,6 @@ class RandomForestBayesTuner(Tuner[RFModel]):
         )
         opt.fit(X_train, y_train)
 
-        model: SKRandomForestClassifier = opt.best_estimator_  # type: ignore
+        model: RandomForestClassifier = opt.best_estimator_  # type: ignore
         best_config: dict[str, Any] = opt.best_params_  # type: ignore
-        return RFModel(model, config=best_config)
+        return RandomForestModel(model, config=best_config)
