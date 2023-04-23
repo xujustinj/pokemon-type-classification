@@ -6,7 +6,7 @@ from typing import Any, TypeVar
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from model import Model
 from util import load_data, multiset_accuracy, plot_confusion
@@ -33,6 +33,7 @@ def _outer_cv_fold(
     tuner: Tuner[M],
     search: SearchSpace,
     n_folds_inner: int,
+    duplicate: bool,
     model_dir: str,
     X: np.ndarray,
     y: np.ndarray,
@@ -40,10 +41,10 @@ def _outer_cv_fold(
     train_ids: np.ndarray,
     test_ids: np.ndarray,
 ) -> tuple[M, float, np.ndarray]:
-    """Apply nested cross validation and find average cross validation accuracy. 
+    """Apply nested cross validation and find average cross validation accuracy.
 
-    Apply nested cross validation and find average cross validation accuracy 
-    to one model type with hyperparamater tuning in inner folds. 
+    Apply nested cross validation and find average cross validation accuracy
+    to one model type with hyperparamater tuning in inner folds.
 
     Args:
         tuner (Trainer[M]): The trainer for model type M
@@ -57,8 +58,8 @@ def _outer_cv_fold(
         test_ids (np.ndarray): The indices of testing data
 
     Returns:
-        tuple[M, float, np.ndarray]: tuple containing trained model of type M, 
-                                     testing accuracy of the model in this fold, 
+        tuple[M, float, np.ndarray]: tuple containing trained model of type M,
+                                     testing accuracy of the model in this fold,
                                      and the prediction result on test set
     """
     model_path = os.path.join(model_dir, f"cv-{id}.mdl")
@@ -70,7 +71,7 @@ def _outer_cv_fold(
         X_train: np.ndarray = X[train_ids, :]
         y_train: np.ndarray = y[train_ids]
 
-        split = StratifiedKFold(
+        split = (KFold if duplicate else StratifiedKFold)(
             n_splits=n_folds_inner,
             shuffle=True,
             random_state=441,
@@ -108,12 +109,13 @@ def outer_cv(
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
     n_jobs: int = 1,
+    duplicate: bool = False,
     hard_mode: bool = False,
 ) -> float:
-    """Apply nested cross validation and find average cross validation accuracy. 
+    """Apply nested cross validation and find average cross validation accuracy.
 
-    Apply nested cross validation and find average cross validation accuracy 
-    to one model type with hyperparamater tuning in inner folds. 
+    Apply nested cross validation and find average cross validation accuracy
+    to one model type with hyperparamater tuning in inner folds.
 
     Args:
         tuner (Trainer[M]): The trainer for model type M
@@ -144,8 +146,7 @@ def outer_cv(
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
-    # for model_config in model_configs:
-    outer_splitter = StratifiedKFold(
+    outer_splitter = (KFold if duplicate else StratifiedKFold)(
         n_splits=n_folds_outer,  # number of folds
         shuffle=True,  # protects against data being ordered, e.g., all successes first
         random_state=441,
@@ -170,6 +171,7 @@ def outer_cv(
                 tuner=tuner,
                 search=search,
                 n_folds_inner=n_folds_inner,
+                duplicate=duplicate,
                 model_dir=model_dir,
                 X=X,
                 y=y,

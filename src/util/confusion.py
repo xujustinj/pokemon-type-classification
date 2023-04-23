@@ -40,7 +40,7 @@ def multiset_confusion(
     label_to_index = {label: i for i, label in enumerate(labels)}
 
     cm = np.zeros((K, K), dtype=float)
-    for _ in range(N):
+    for i in range(N):
         ind_true = [label_to_index[label] for label in y_true[i,:]]
         ind_pred = [label_to_index[label] for label in y_pred[i,:]]
         for i in ind_true:

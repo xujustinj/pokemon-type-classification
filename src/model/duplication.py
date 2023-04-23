@@ -39,13 +39,13 @@ class DuplicationModel(Model):
                 order from highest to lowest probability.
         """
         p = self.predict_probabilities(X)
-        ks = []
-        for _ in range(self.M):
-            k = p.argmax(dim=-1)
-            for i, k in enumerate(k):
+        all_label_ids = []
+        for _ in range(self._M):
+            label_ids = p.argmax(axis=-1)
+            for i, k in enumerate(label_ids):
                 p[i,k] -= 1
-            ks.append(k)
-        return self.labels()[np.stack(ks, axis=-1)]
+            all_label_ids.append(label_ids)
+        return self.labels[np.stack(all_label_ids, axis=-1)]
 
     def predict_probabilities(self, X: np.ndarray) -> np.ndarray:
         """Predict class probabilities.
@@ -74,4 +74,4 @@ class DuplicationModel(Model):
             labels (ndarray): [K] Label names of the data, such that labels[k]
                 is the name of the kth label.
         """
-        return self._model.labels()
+        return self._model.labels
