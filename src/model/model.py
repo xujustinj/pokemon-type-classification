@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 import joblib
 from typing import Any, Type, TypeVar
 
-from sklearn.metrics import accuracy_score
-
 import numpy as np
 
 
@@ -12,9 +10,10 @@ Config = dict[str, Any]
 
 
 class Model(ABC):
-    """An abstract wrapper for a K-class single-label classification model.
+    """An abstract K-class M-label multiset classification model.
 
-    Predicts on P-dimensional inputs. That is, R^P -> {1, ..., K}.
+    Predicts on P-dimensional inputs. That is, R^P -> {1, ..., K}^M.
+    When M=1, this is regular single-label classification.
 
     Args:
         config (Config): The hyperparameters of the model.
@@ -27,49 +26,45 @@ class Model(ABC):
 
         self.config = config
 
-    @abstractmethod
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Predict class labels.
 
         Args:
-            X (ndarray): [N x P] Predictor values.
+            X (ndarray): [N x P] predictor values.
 
         Returns:
-            y (ndarray): [N] Predicted class labels.
+            y (ndarray): [N] (if M=1) or [N x M] predicted class labels.
         """
-        pass
+        p = self.predict_probabilities(X)
+        return self.labels[p.argmax(axis=-1)]
 
     @abstractmethod
     def predict_probabilities(self, X: np.ndarray) -> np.ndarray:
         """Predict class probabilities.
 
+        When M>=2, it is more accurate to think of the probabilities as the
+        "expected multiplicity" of each class, so it is possible for a value
+        larger than 1 to reflect an element that occurs multiple times. This is
+        consistent with single-label classification when M=1.
+
+        The total probabilities must sum to M.
+
         Args:
-            X (ndarray): [N x P] Predictor values.
+            X (ndarray): [N x P] predictor values.
 
         Returns:
-            p (ndarray): [N x K] Predicted probabilities, where p[i, k] is the
-                probability that X[i] is class k.
+            p (ndarray): [N x K] predicted "probabilities", where p[i, k] is the
+                expected multiplicity of class k in y[i].
         """
         pass
 
-    def accuracy(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Evaluate the accuracy of the model with test data.
-
-        Args:
-            X (ndarray): [N x P] Predictor values.
-            y (ndarray): [N] True class labels.
-
-        Returns:
-            accuracy (float): Accuracy of the model prediction on test data.
-        """
-        return float(accuracy_score(y_true=y, y_pred=self.predict(X)))
-
+    @property
     @abstractmethod
     def labels(self) -> np.ndarray:
-        """The class names associated with the model.
+        """The label names associated with the model.
 
         Returns:
-            labels (ndarray): [K] Label names of the data, such that labels[k]
+            labels (ndarray): [K] label names of the data, such that labels[k]
                 is the name of the kth label.
         """
         pass
@@ -90,7 +85,7 @@ class Model(ABC):
             path (str): The path to the model file.
 
         Returns:
-            model (Self): A model of this class's type.
+            model (Model): A model of this class's type.
         """
         model = joblib.load(path)
         assert isinstance(model, cls)

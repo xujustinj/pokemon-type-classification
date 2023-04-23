@@ -11,7 +11,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import StratifiedKFold
 
 from model import Model
-from util import load_data
+from util import accuracy, load_data
 from .tuner import Tuner, SearchSpace
 
 
@@ -74,12 +74,11 @@ def _outer_cv_fold(
 
     X_test: np.ndarray = X[test_ids, :]
     y_test: np.ndarray = y[test_ids]
-    accuracy = model.accuracy(X_test, y_test)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy(y_test, y_pred)
     _log.info(f"{id}  Accuracy: {accuracy}")
 
-    predictions = model.predict(X_test)
-
-    return model, accuracy, predictions
+    return model, accuracy, y_pred
 
 
 def outer_cv(

@@ -43,6 +43,7 @@ class RandomForestModel(Model):
         """
         return self._model.predict_proba(X)
 
+    @property
     def labels(self) -> np.ndarray:
         """The class names associated with the model.
 
