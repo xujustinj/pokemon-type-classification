@@ -65,36 +65,22 @@ def load_data(
     )
 
     if duplicate:
+        # replace None type_2 with another copy of type_1
         is_pure = poke_data["type_2"] == "None"
         poke_data.loc[is_pure, "type_2"] = poke_data.loc[is_pure, "type_1"]
 
-        poke_data_1 = poke_data.rename(columns=dict(type_1="type")).drop(columns="type_2")
-        poke_data_2 = poke_data.rename(columns=dict(type_2="type")).drop(columns="type_1")
-        poke_data = pd.concat([poke_data_1, poke_data_2])
-
-        # interweave: shuffle, resort, reindex
-        poke_data = poke_data.sample(frac=1, random_state=441)
-        # sort must be stable, such as merge sort
-        # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.sort_index.html
-        poke_data.sort_index(kind="mergesort", inplace=True)
-        poke_data.reset_index(drop=True, inplace=True)
-
-        n_row = n_row * 2
-        n_col = n_col - 1
-        assert poke_data.shape == (n_row, n_col)
-
-        X = ct.fit_transform(poke_data.drop(columns="type"))
-        n_feat = n_col - 1  # remove type
+        X = ct.fit_transform(poke_data.drop(columns=["type_1", "type_2"]))
+        n_feat = n_col - 2  # remove types
         n_feat = n_feat + (_N_STATUS - 1)  # add one-hot encoding of status
         assert isinstance(X, np.ndarray)
         assert X.shape == (n_row, n_feat)  # -1 because None type
         assert X.dtype == float
 
-        y = poke_data["type"]
-        assert len(y.unique()) == _N_CLASS
+        y = poke_data[["type_1", "type_2"]]
+        assert len(pd.concat([y["type_1"], y["type_2"]]).unique()) == _N_CLASS
         y = y.to_numpy()
         assert isinstance(y, np.ndarray)
-        assert y.shape == (n_row,)
+        assert y.shape == (n_row, 2)
         assert y.dtype == object
 
     else:

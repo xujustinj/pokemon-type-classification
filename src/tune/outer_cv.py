@@ -4,14 +4,13 @@ import os
 from time import time
 from typing import Any, TypeVar
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import StratifiedKFold
 
 from model import Model
-from util import accuracy, load_data
+from util import load_data, multiset_accuracy, plot_confusion
+from .duplication import DuplicationTuner
 from .tuner import Tuner, SearchSpace
 
 
@@ -75,7 +74,7 @@ def _outer_cv_fold(
     X_test: np.ndarray = X[test_ids, :]
     y_test: np.ndarray = y[test_ids]
     y_pred = model.predict(X_test)
-    accuracy = accuracy(y_test, y_pred)
+    accuracy = multiset_accuracy(y_test, y_pred)
     _log.info(f"{id}  Accuracy: {accuracy}")
 
     return model, accuracy, y_pred
@@ -88,12 +87,13 @@ def outer_cv(
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
     n_jobs: int = 1,
-    **kwargs,
+    hard_mode: bool = False,
 ) -> float:
-    n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold
-    print(f"Outer CV using {n_jobs} cores")
+    duplicate = isinstance(tuner, DuplicationTuner)
 
-    X, y = load_data(**kwargs)
+    n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold
+
+    X, y = load_data(hard_mode=hard_mode, duplicate=duplicate)
     results: list[dict[str, Any]] = []
 
     model_dir = os.path.join(
@@ -113,8 +113,14 @@ def outer_cv(
         random_state=441,
     )
 
-    outer_splits = list(outer_splitter.split(X, y))
+    if duplicate:
+        y_merged = np.array(["/".join(sorted(row)) for row in y])
+        outer_splits = list(outer_splitter.split(X, y_merged))
+    else:
+        outer_splits = list(outer_splitter.split(X, y))
+
     if n_jobs > 1:
+        print(f"Outer CV using {n_jobs} cores")
         with mp.Pool(n_jobs) as pool:
             models = pool.starmap(_outer_cv_fold, [
                 (tuner, search, n_folds_inner, model_dir, X, y, i+1, train_ids, test_ids)
@@ -141,31 +147,25 @@ def outer_cv(
         results.append(dict(**model.config, accuracy=accuracy))
         y_pred[test_ids] = predictions
 
-    labels = models[0][0].labels()
+    labels = models[0][0].labels
 
-    cm_by_true = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels, normalize="true")
-    display_by_true = ConfusionMatrixDisplay(
-        confusion_matrix=cm_by_true,
-        display_labels=labels,
+    plot_confusion(
+        y_true=y,
+        y_pred=y_pred,
+        labels=labels,
+        normalize="true",
+        name=f"{name} by true label",
+        path=os.path.join(model_dir, "confusion_matrix_by_true.png"),
     )
-    plt.rcParams['figure.figsize'] = [10, 10]
-    plt.figure(figsize=(10,10))
-    display_by_true.plot(xticks_rotation='vertical', values_format=".0%")
-    plt.title(f"Confusion Matrix on Test Data for {name} (by true class)")
-    plt.savefig(os.path.join(model_dir, "confusion_matrix_by_true.png"))
-    plt.show()
 
-    cm_by_pred = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels, normalize="pred")
-    display_by_pred = ConfusionMatrixDisplay(
-        confusion_matrix=cm_by_pred,
-        display_labels=labels,
+    plot_confusion(
+        y_true=y,
+        y_pred=y_pred,
+        labels=labels,
+        normalize="pred",
+        name=f"{name} by predicted label",
+        path=os.path.join(model_dir, "confusion_matrix_by_pred.png"),
     )
-    plt.rcParams['figure.figsize'] = [10, 10]
-    plt.figure(figsize=(10,10))
-    display_by_pred.plot(xticks_rotation='vertical', values_format=".0%")
-    plt.title(f"Confusion Matrix on Test Data for {name} (by predicted class)")
-    plt.savefig(os.path.join(model_dir, "confusion_matrix_by_pred.png"))
-    plt.show()
 
     results_df = pd.DataFrame.from_records(results)
     results_df.to_csv(os.path.join(model_dir, "result.csv"))

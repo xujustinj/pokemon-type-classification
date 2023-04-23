@@ -2,7 +2,7 @@ from multiset import Multiset
 import numpy as np
 from sklearn.metrics import accuracy_score
 
-def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+def multiset_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """Evaluate the accuracy of predictions versus test data.
 
     For multilabel predictions, the labels are treated as multisets, and the

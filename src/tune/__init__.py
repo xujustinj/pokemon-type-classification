@@ -5,3 +5,5 @@ from .outer_cv import outer_cv
 from .logistic_regression import LogisticRegressionBayesTuner
 from .random_forest import RandomForestBayesTuner
 from .support_vector_machine import SupportVectorMachineBayesTuner
+
+from .duplication import DuplicationTuner
