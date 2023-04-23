@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 
 from model import Model
 from util import load_data
-from .tuner import Tuner, SearchSpace, Splitter
+from .tuner import Tuner, SearchSpace
 
 
 M = TypeVar("M", bound=Model)
@@ -89,14 +89,21 @@ def outer_cv(
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
     n_jobs: int = 1,
+    **kwargs,
 ) -> float:
     n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold
     print(f"Outer CV using {n_jobs} cores")
 
-    X, y = load_data()
+    X, y = load_data(**kwargs)
     results: list[dict[str, Any]] = []
 
-    model_dir = os.path.join(BASE_MODEL_DIR, name.replace(" ", "_").lower())
+    model_dir = os.path.join(
+        BASE_MODEL_DIR,
+        name.replace(" ", "_") \
+            .replace("(", "") \
+            .replace(")", "") \
+            .lower(),
+    )
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
@@ -136,16 +143,29 @@ def outer_cv(
         y_pred[test_ids] = predictions
 
     labels = models[0][0].labels()
-    cm = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels)
-    display = ConfusionMatrixDisplay(
-        confusion_matrix=cm,
+
+    cm_by_true = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels, normalize="true")
+    display_by_true = ConfusionMatrixDisplay(
+        confusion_matrix=cm_by_true,
         display_labels=labels,
     )
     plt.rcParams['figure.figsize'] = [10, 10]
     plt.figure(figsize=(10,10))
-    display.plot(xticks_rotation='vertical')
-    plt.title(f"Confusion Matrix on Test Data for {name}")
-    plt.savefig(os.path.join(model_dir, "confusion_matrix.png"))
+    display_by_true.plot(xticks_rotation='vertical', values_format=".0%")
+    plt.title(f"Confusion Matrix on Test Data for {name} (by true class)")
+    plt.savefig(os.path.join(model_dir, "confusion_matrix_by_true.png"))
+    plt.show()
+
+    cm_by_pred = confusion_matrix(y_true=y, y_pred=y_pred, labels=labels, normalize="pred")
+    display_by_pred = ConfusionMatrixDisplay(
+        confusion_matrix=cm_by_pred,
+        display_labels=labels,
+    )
+    plt.rcParams['figure.figsize'] = [10, 10]
+    plt.figure(figsize=(10,10))
+    display_by_pred.plot(xticks_rotation='vertical', values_format=".0%")
+    plt.title(f"Confusion Matrix on Test Data for {name} (by predicted class)")
+    plt.savefig(os.path.join(model_dir, "confusion_matrix_by_pred.png"))
     plt.show()
 
     results_df = pd.DataFrame.from_records(results)
