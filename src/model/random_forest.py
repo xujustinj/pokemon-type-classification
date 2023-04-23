@@ -1,60 +1,53 @@
-from sklearn.metrics import accuracy_score
-from sklearn import ensemble
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 from .model import Model, Config
 
 
 class RandomForestModel(Model):
-    def __init__(self, model: ensemble.RandomForestClassifier, config: Config):
-        """Initialize a random forest classifier given model configuration and a random forest classifier model instance.
+    """A random forest classification model.
 
-        Initialize a random forest classifier model given model configuration and a random forest classifier instance.
+    Implemented with sklearn.
 
-        Args:
-            model (ensemble.RandomForestClassifier): A random forest classifier model instance
-            config (Config): A config specifying the hyperparameters for each model
+    Args:
+        model (RandomForest): The sklearn RandomForest model.
+        config (Config): The hyperparameters of the model.
+    """
 
-        """
+    def __init__(self, model: RandomForestClassifier, config: Config):
+        assert isinstance(model, RandomForestClassifier)
+
         super().__init__(config)
         self._model = model
 
-    def predict(self, X_test):
-        """Predict y-values given X-values.
-
-        Predict y-values given X-values using the model.
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict class labels.
 
         Args:
-            X_test (numpy.ndarray): X-values of test data
+            X (ndarray): [N x P] Predictor values.
 
         Returns:
-            numpy.ndarray: Predicted y-values
-
+            y (ndarray): [N] Predicted class labels.
         """
-        return self._model.predict(X_test)
+        return self._model.predict(X)
 
-    def evaluate(self, X_test, y_test) -> float:
-        """Evaluate the model with test data.
-
-        Evaluate the model given X-values and y-values of test data.
+    def predict_probabilities(self, X: np.ndarray) -> np.ndarray:
+        """Predict class probabilities.
 
         Args:
-            X-values (numpy.ndarray): X-values of test data
-            y-values (numpy.ndarray): y-values of test data
+            X (ndarray): [N x P] Predictor values.
 
         Returns:
-            float: Accuracy of the model prediction on test data
-
+            p (ndarray): [N x K] Predicted probabilities, where p[i, k] is the
+                probability that X[i] is class k.
         """
-        y_pred = self._model.predict(X_test)
-        return float(accuracy_score(y_test, y_pred))
+        return self._model.predict_proba(X)
 
-    def labels(self):
-        """Return the distinct classes of data used to train the model.
-
-        Return the distinct label classes of data used to train the model.
+    def labels(self) -> np.ndarray:
+        """The class names associated with the model.
 
         Returns:
-            numpy.ndarray: the distinct label classes of data used to train the model
-
+            labels (ndarray): [K] Label names of the data, such that labels[k]
+                is the name of the kth label.
         """
         return self._model.classes_

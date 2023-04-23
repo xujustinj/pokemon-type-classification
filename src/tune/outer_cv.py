@@ -74,8 +74,8 @@ def _outer_cv_fold(
 
     X_test: np.ndarray = X[test_ids, :]
     y_test: np.ndarray = y[test_ids]
-    accuracy = model.evaluate(X_test, y_test)
-    _log.info(f"{id}\tAccuracy: {accuracy}")
+    accuracy = model.accuracy(X_test, y_test)
+    _log.info(f"{id}  Accuracy: {accuracy}")
 
     predictions = model.predict(X_test)
 

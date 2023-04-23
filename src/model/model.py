@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import joblib
 from typing import Any, Type, TypeVar
 
+from sklearn.metrics import accuracy_score
+
 import numpy as np
 
 
@@ -10,15 +12,15 @@ Config = dict[str, Any]
 
 
 class Model(ABC):
+    """An abstract wrapper for a K-class single-label classification model.
+
+    Predicts on P-dimensional inputs. That is, R^P -> {1, ..., K}.
+
+    Args:
+        config (Config): The hyperparameters of the model.
+    """
+
     def __init__(self, config: Config):
-        """Initialize a model instance given model configuration.
-
-        Initialize a model instance given model configuration.
-
-        Args:
-            config (Config): A config specifying the hyperparameters for each model
-
-        """
         assert isinstance(config, dict)
         for k in config.keys():
             assert isinstance(k, str)
@@ -26,68 +28,69 @@ class Model(ABC):
         self.config = config
 
     @abstractmethod
-    def predict(self, X_test: np.ndarray) -> np.ndarray:
-        """Predict y-values given X-values.
-
-        Predict y-values given X-values using the model.
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict class labels.
 
         Args:
-            X_test (numpy.ndarray): X-values of test data
+            X (ndarray): [N x P] Predictor values.
 
         Returns:
-            numpy.ndarray: Predicted y-values
-
+            y (ndarray): [N] Predicted class labels.
         """
         pass
 
     @abstractmethod
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> float:
-        """Evaluate the model with test data.
-
-        Evaluate the model given X-values and y-values of test data.
+    def predict_probabilities(self, X: np.ndarray) -> np.ndarray:
+        """Predict class probabilities.
 
         Args:
-            X-values (numpy.ndarray): X-values of test data
-            y-values (numpy.ndarray): y-values of test data
+            X (ndarray): [N x P] Predictor values.
 
         Returns:
-            float: Accuracy of the model prediction on test data
-
+            p (ndarray): [N x K] Predicted probabilities, where p[i, k] is the
+                probability that X[i] is class k.
         """
         pass
+
+    def accuracy(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Evaluate the accuracy of the model with test data.
+
+        Args:
+            X (ndarray): [N x P] Predictor values.
+            y (ndarray): [N] True class labels.
+
+        Returns:
+            accuracy (float): Accuracy of the model prediction on test data.
+        """
+        return float(accuracy_score(y_true=y, y_pred=self.predict(X)))
 
     @abstractmethod
     def labels(self) -> np.ndarray:
-        """Return the distinct classes of data used to train the model.
-
-        Return the distinct label classes of data used to train the model.
+        """The class names associated with the model.
 
         Returns:
-            numpy.ndarray: the distinct label classes of data used to train the model
-
+            labels (ndarray): [K] Label names of the data, such that labels[k]
+                is the name of the kth label.
         """
         pass
 
     def save(self, path: str) -> None:
         """Save the model to the specified path.
 
-        Save the model to the specified path. The directories must exist already.
-
         Args:
-            path (str): The path, including the filename, where the model will be stored
-
+            path (str): The path where the model will be stored.
         """
         joblib.dump(self, path)
 
     @classmethod
     def load(cls: Type[Self], path: str) -> Self:
-        """Load model given the model path.
-
-        Load the model given the model path with joblib.
+        """Load model from the specified path.
 
         Args:
-            path (str): The path, including the filename, where the model will be stored
+            path (str): The path to the model file.
 
+        Returns:
+            model (Self): A model of this class's type.
         """
         model = joblib.load(path)
         assert isinstance(model, cls)
