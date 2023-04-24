@@ -30,7 +30,7 @@ df <- read.csv("../data/scraped.csv")
 
 # Summary
 
-Predicting a Pokémon's type is an inherently difficult task, with 18 possible categories and no clear pattern. Therefore, there is great appeal in applying new methods in an attempt to achieve great accuracy. In this report, we apply classification methods such as logistic regression, support vector machines (SVMs), random forests, and neural networks to an enhanced version of the Pokémon Database dataset. For each model, we perform hyperparameter tuning using Bayesian Optimization and evaluate the tuning process using stratified nested cross-validation. We find that the enhanced features allow all models to achieve near-perfect accuracy. Thus, we turn our attention to a subset of the features to better compare the models. Further, to deal with sparse type categories, we investigate a "duplication" method for multi-label prediction, where a single-label classifier is trained on two copies of each Pokémon corresponding to each of the Pokémon's types. **TODO: conclusion**
+Predicting a Pokémon's type is an inherently difficult task, with 18 possible categories and no clear pattern. Therefore, there is great appeal in applying new methods in an attempt to achieve great accuracy. In this report, we apply classification methods such as logistic regression, support vector machines (SVMs), random forests, and neural networks to an enhanced version of the Pokémon Database dataset. For each model, we perform hyperparameter tuning using Bayesian Optimization and evaluate the tuning process using stratified nested cross-validation. We find that the enhanced features allow all models to achieve near-perfect accuracy. Thus, we turn our attention to a subset of the features to better compare the models. Further, to deal with sparse type categories, we investigate a "duplication" method for multi-label prediction, where a single-label classifier is trained on two copies of each Pokémon corresponding to each of the Pokémon's types. We discover that some types are easier to classify than others, particularly Dragon. The classifiers overall achieve very similar prediction accuracy for duplication as for primary-type classification.
 
 # Introduction
 
@@ -148,6 +148,8 @@ For example, a Pokemon with the predicted probabilities (Water: 75%, Grass: 20%,
 To demonstrate the method, we implemented duplication on all models that use `sklearn`: logistic regression, SVM, and random forest.
 We compare the models' performance at the duplication task alongside the normal prediction of `type_1` only.
 
+To measure the accuracy of a multiset prediction, we take the multiset intersection between the predicted and true labels, and divide that set's cardinality by 2.
+
 ## Logistic Regression
 
 We focused on multinomial logistic regression using `scikit-learn` package in Python. For multinomial logistic regression with $K \ge 2$ classes, we fit a single classifier with K outputs (one of them is 1), and take the softmax thereof. For regularization, ElasticNet encompasses both L1 and L2 penalties (and with a weak enough regularization term, no-penalty as well). We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength. Specifically, we utilize Bayesian Optimization to sample over the entire continuous space with ranges of the ratio of the L1 and L2 penalties and `C` being $[0.0, 1.0]\times [10^{-4}, 10^{4}]$.
@@ -162,9 +164,9 @@ When excluding `type_2` and `damage_from_{Type}`, the level of regularization al
 
 ## Support Vector Machines
 
-We trained support vector machine (SVM) models using the `scikit-learn` package in Python. The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output. For tuning, we consider the linear, polynomial, and radial basis function (RBF) kernels. The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels] Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel. Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between $[2, 5]\times[10^{-4}, 10^{4}]\times[10^{-3}, 10^{3}]\times[0.0, 1.0]$ for the polynomial kernel. For the RBF kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
-
 There are two formulations of multiclass classification using SVMs: one-versus-rest (OVR) and one-versus-one (OVO). We decide to use OVR because it fits one SVM for each of the 18 classes, whereas OVO will create $18 \times 17 = 306$ models which would increase the model complexity, training time, and the risk of overfitting.
+
+We trained support vector machine (SVM) models using the `scikit-learn` package in Python. The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output. For tuning, we consider the linear, polynomial, and radial basis function (RBF) kernels. The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels] Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel. Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between $[2, 5]\times[10^{-4}, 10^{4}]\times[10^{-3}, 10^{3}]\times[0.0, 1.0]$ for the polynomial kernel. For the RBF kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
 
 After hyperparameter tuning, we observe that in general, the best kernel was the RBF with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$. Overall, we obtain a model accuracy of $96.680\%$.
 
@@ -186,7 +188,7 @@ For random forests, we utilized the `scikit-learn` package in Python. The search
 
 After hyperparameter tuning, we observe that in general the Gini index criterion was preferred. The optimal `max_depth`s range between 10 and 38. The optimal `max_features` range between 35 and 74. Overall, we obtain a model accuracy of $96.491\%$.
 
-Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{Type}`, with the same search space as before. We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between $[13, 37]\times[3, 37]$ respectively. Overall, we obtain a model accuracy of $44.971\%$ after removing these features.
+Next, we also investigate the strength of the model without the features `type_2` and the `damage_from_{Type}`, with the same search space as before. We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between $[13, 37]\times[3, 37]$ respectively. Overall, we obtain a model accuracy of $44.971\%$ after removing these features.
 
 ## Neural Network
 
@@ -201,19 +203,24 @@ After removing `type_2` and `damage_from_{Type}`, we find that the prediction ta
 
 ## Confusion Matrices Intepretation
 
-Overall, every classifier performed extremely well (over 90% accuracy) when `type_2` and `damage_from_{Type}` were included in the feature space. The result is not surprising as `damage_from_{Type}` is strongly related to the type of the Pokemon and `type_2` eliminates a choice of `type_1` (`type_2` and `type_1` must be different). Thus, the performance of the models are expected. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Base)](#confusion-matrix-for-logistic-regression-base)
+Overall, every classifier performed extremely well (over 95% accuracy) when `type_2` and `damage_from_{Type}` were included in the feature space. The result is not surprising as `damage_from_{Type}` is strongly related to the type of the Pokemon and `type_2` eliminates a choice of `type_1` (`type_2` and `type_1` must be different). Thus, the performance of the models are expected. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Base)](#confusion-matrix-for-logistic-regression-base)
 , [Confusion Matrix for Support Vector Machine (Base)](#confusion-matrix-for-support-vector-machine-base)
 , [Confusion Matrix for Random Forest (Base)](#confusion-matrix-for-random-forest-base)
 , [Confusion Matrix for Neural Network (Base)](#confusion-matrix-for-neural-network-base)
 
-However, the same does not hold when we train the model Without the `type_2` and `damage_from_{Type}` variables. The result from nested CV suggests a drastic decrease in prediction accuracy for all models.
+However, the same does not hold when we train the model without the `type_2` and `damage_from_{Type}` variables. The result from nested CV suggests a drastic decrease in prediction accuracy for all models.
 
 ```{r, out.width="60%", out.height="60%", echo = F, fig.align='center', fig.cap="Confusion Matrix on Test Data for Random Forest (SVM) Without type\\_2 and damage\\_from\\_\\{type\\} Features"}
 knitr::include_graphics("../models/random_forest_hard/confusion_matrix_by_true.png")
 ```
 
-For instance, in the Confusion Matrix for Random Forest (Hard), we observed that the model was not able to predict any `Flying` type correctly and did extremely poorly for `Fairy` type. This is likely due to the small sample size of `Flying` and `Fairy` type Pokemon which has 8 and 19 samples respectively. Another interesting observation is that all models tend to make errors by falsely classifying the Pokemon as `Water` or `Bug` type. This is most obvious in random forest where most errors occurred in the `Water` column and might have to do with the relatively large `Water` type Pokemon population (136 `Water` type) and their generic attributes compared to the population. In contrast, `Dragon` and `Fire` type Pokémon has a relatively higher prediction accuracy across more models. We are certain that the high `Dragon` type prediction accuracy is because some of their particularly noticeable features: an extremely high `egg_cycles` and an extremely low `catch_rate` See Appendix [Dragon Pokémon Features](#dragon-pokemon-features)
-. As for the `Fire` type Pokémon, we did not find a particular feature that stands out could not explaining its high prediction accuracy. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Hard)](#confusion-matrix-for-logistic-regression-hard), [Confusion Matrix for Support Vector Machine (Hard)](#confusion-matrix-for-support-vector-machine-hard), [Confusion Matrix for Neural Network (Hard)](#confusion-matrix-for-neural-network-hard)
+For instance, in the Confusion Matrix for Random Forest (Hard), we observed that the model was not able to predict any `Flying` type correctly and did extremely poorly for `Fairy` type.
+This is likely due to the small sample size of `Flying` and `Fairy` type Pokemon which has 8 and 19 samples respectively.
+Another interesting observation is that all models tend to make errors by falsely classifying the Pokemon as `Water` or `Bug` type.
+This is most obvious in random forest where most errors occurred in the `Water` column and might have to do with the relatively large `Water` type Pokemon population (136 `Water` type) and their generic attributes compared to the population.
+In contrast, `Dragon` and `Fire` type Pokémon has a relatively higher prediction accuracy across more models.
+We are certain that the high `Dragon` type prediction accuracy is because some of their particularly noticeable features: an extremely high `egg_cycles` and an extremely low `catch_rate` See Appendix [Dragon Pokémon Features](#dragon-pokemon-features)
+. As for the `Fire` type Pokémon, we did not find a particular standout feature that explains its high prediction accuracy. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Hard)](#confusion-matrix-for-logistic-regression-hard), [Confusion Matrix for Support Vector Machine (Hard)](#confusion-matrix-for-support-vector-machine-hard), [Confusion Matrix for Neural Network (Hard)](#confusion-matrix-for-neural-network-hard)
 
 
 ## Model Comparison
