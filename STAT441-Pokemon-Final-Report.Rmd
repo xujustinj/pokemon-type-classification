@@ -135,6 +135,12 @@ Next we also investigate the strength of the model without the features `type_2`
 
 # Interpretation of Results
 
+## Interpretation of Confusion Matrices
+
+Overall each classifier performed extremely well (over 90% accuracy) when `type_2` and `damage_from_{TYPE}` were included in the feature space. This result is not entirely surprising since these features provide a ton of additional information that is evidently very useful when trying to predict the primary type. As discussed in the introduction, certain types of pokemon have determined weaknesses to other specfic types in terms of damage taken. Additionally, since the `damage_from_{TYPE}` variables would effectively eliminate some of the possible types, the `type_2` variable would provide even more information about the possible values that `type_1` can take on. Thus, the performance of the models are not unexpected but very welcome. 
+
+With this information, we move onto investigate how the same models will perform without the `type_2` and `damage_from_{TYPE}`. 
+
 # Discussion
 
 # References {#sec:ref}
