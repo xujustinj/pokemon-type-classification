@@ -1,0 +1,6 @@
+,C,l1_ratio,max_iter,multi_class,penalty,random_state,solver,warm_start,accuracy
+0,4.804573689258363,1.0,9001,multinomial,elasticnet,441,saga,True,0.985781990521327
+1,2.378061208097783,1.0,9001,multinomial,elasticnet,441,saga,True,0.976303317535545
+2,2.3462982868442794,0.8697960267314141,9001,multinomial,elasticnet,441,saga,True,0.985781990521327
+3,4.191707994992755,0.7713004479643218,9001,multinomial,elasticnet,441,saga,True,0.9691943127962085
+4,2.560382432746291,1.0,9001,multinomial,elasticnet,441,saga,True,0.9738095238095238
