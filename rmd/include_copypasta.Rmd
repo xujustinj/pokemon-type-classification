@@ -1,0 +1,5 @@
+```{r, child=c('rmd/converted_ipynb/logistic_regression.md', 'rmd/converted_ipynb/support_vector_machine.md', 'rmd/converted_ipynb/random_forest.md', 'rmd/converted_ipynb/neural_network_base.md', 'rmd/converted_ipynb/neural_network_hard.md')}
+```
+
+```{r, child=c('rmd/converted_py/model/__init__.md', 'rmd/converted_py/model/duplication.md', 'rmd/converted_py/model/model.md', 'rmd/converted_py/model/sk_model.md', 'rmd/converted_py/scrape/util/dict.md', 'rmd/converted_py/scrape/util/soup.md', 'rmd/converted_py/scrape/util/sprite.md', 'rmd/converted_py/scrape/__init__.md', 'rmd/converted_py/scrape/scrape.md', 'rmd/converted_py/scrape/variant.md', 'rmd/converted_py/tune/__init__.md', 'rmd/converted_py/tune/dimension.md', 'rmd/converted_py/tune/outer_cv.md', 'rmd/converted_py/tune/sk_bayes.md', 'rmd/converted_py/tune/tuner.md', 'rmd/converted_py/util/__init__.md', 'rmd/converted_py/util/accuracy.md', 'rmd/converted_py/util/confusion.md', 'rmd/converted_py/util/duplication.md', 'rmd/converted_py/util/parallel.md')}
+```

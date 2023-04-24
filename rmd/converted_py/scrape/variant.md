@@ -1,3 +1,6 @@
+## `scrape/variant.py`
+
+```{py}
 from functools import cached_property
 from math import sqrt
 
@@ -466,3 +469,4 @@ class Variant:
             attr: getattr(self, attr)
             for attr in Variant.PROPERTIES
         }
+```

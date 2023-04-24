@@ -10,6 +10,9 @@ bibliography: references.bib
 output:
   bookdown::pdf_document2:
     toc: false
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r setup, include=FALSE}
@@ -47,8 +50,7 @@ Using a standard nested cross-validation method, we compare the performance betw
 
 ## Data Scraping
 
-Using the [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the website [Pokémon DB](https://pokemondb.net/pokedex/all).
-We chose numerical features, or categorical features with a small number of different values.
+Using the [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the website [Pokémon DB](https://pokemondb.net/pokedex/all). We chose numerical features, or categorical features with a small number of different values.
 The scraped attributes include biometrics, combat statistics, and training characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokémon.
 To augment this data, we scraped images of each Pokémon and computed simple characteristics of the image to serve as additional attributes.
 A detailed discussion on data processing can be found in Appendix.
@@ -56,7 +58,7 @@ A detailed discussion on data processing can be found in Appendix.
 ### Categorical and Binary Features
 
 | Feature    | Description                                                          |
-|:-----------|:---------------------------------------------------------------------|
+|:-----------------|:-----------------------------------------------------|
 | status     | Whether the Pokémon is normal, legendary, sub-legendary, or mythical |
 | type_1     | The primary type of the Pokémon                                      |
 | type_2     | The secondary type of the Pokémon if it exists                       |
@@ -69,7 +71,7 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 ### Numerical Features
 
 | Feature               | Description                                                        |
-|:----------------------|:-------------------------------------------------------------------|
+|:--------------------|:--------------------------------------------------|
 | generation            | The chronological divisions of Pokémon, from 1st generation to 8th |
 | type_number           | The number of types the Pokémon belong to, either 1 or 2           |
 | height_m              | The height of the Pokémon in meters                                |
@@ -94,7 +96,7 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 ### Image Features (all numerical)
 
 | Feature              | Description                                                                     |
-|:---------------------|:--------------------------------------------------------------------------------|
+|:------------------|:----------------------------------------------------|
 | size                 | The proportion of pixels occupied by the Pokémon's sprite                       |
 | perimeter            | The number of pixels occupied by the sprite's boundary                          |
 | perimeter_size_ratio | The ratio of the sprite's perimeter to its actual size                          |
@@ -105,31 +107,23 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 
 **Value** = **Red**, **Green**, **Blue**, **Brightness**
 
-```{r, echo=FALSE, fig.align = 'left', out.width='100px', fig.width=10, fig.height=10}
-knitr::include_graphics("pikachu.png")
+```{r, echo=FALSE, fig.align = 'center', fig.cap='Attributes of Pikachu: generation = 1, status = Normal, type\\number = 1, type\\_1 = Electric, type\\_2 = None, height\\_m = 0.4, speed = 90, catch\\_rate = 190, damage\\_from\\_water = 1, damage\\_from\\_ground = 2, sprite\\_red\\_sd = 0.414'}
+knitr::include_graphics("rmd/images/pikachu.png")
 ```
 
 # Previous Explorations
 
-```{r child = 'previous-works.md'}
+```{r child = 'rmd/tables/previous_works.md'}
 ```
 
-* [@pokemondecisiontree]: Simple analysis of the pokemon dataset from generations 1-8.
-  Trying to predict `type_1` using pokemon stats, generation number, as well as mythical/legendary status.
-* [@predictingpokemontypes]: Trying to predict pokemon `type_1` using naive bayes, random forest, and SVMs.
-  Since flying type is severely underrepresented, they remove it and predict only 17 types.
-  Uses pokemon stats, generation number, and legendary status.
-  Additionally used grid search for hyper-parameter tuning, cross-validation, and leave one out cross-validation.
-* [@whosthatnn]: Trying to predict dual pokemon types (`type_1` and `type_2`) using in game sprites from generation 1-5.
-  Utilizes CNN for classification.
-* [@predictingdualtypes]: Trying to predict dual pokemon types (`type_1` and `type_2`) using KNN.
-  For pokemon with only one type, they imputed `type_2` as a repeat of `type_1`, however only predicted for one observation.
-* [@multilabclasstf]: Trying to do multi-label classification with NN in TensorFlow using the in game sprite images.
-* [@pokemontypepredstats]: Multi-label classification using MultiLabelBinarizer, basically one-hot encoding the 18 types and thus allowing it to predict more than one class.
-  Another approach used is classifier chaining and label powersets.
-  The data used only includes the stats of each Pokémon.
-* [@whatsthatpokemon]: Multi-label classification of both types using CNN and fully-connected network (SNN) with pokemon in game sprite images.
-* [@typeusingpokedexentries]: Multi-label classification of both types using natural language processing (NLP) on the pokemon’s pokedex descriptions.
+-   [@pokemondecisiontree]: Simple analysis of the pokemon dataset from generations 1-8. Trying to predict `type_1` using pokemon stats, generation number, as well as mythical/legendary status.
+-   [@predictingpokemontypes]: Trying to predict pokemon `type_1` using naive bayes, random forest, and SVMs. Since flying type is severely underrepresented, they remove it and predict only 17 types. Uses pokemon stats, generation number, and legendary status. Additionally used grid search for hyper-parameter tuning, cross-validation, and leave one out cross-validation.
+-   [@whosthatnn]: Trying to predict dual pokemon types (`type_1` and `type_2`) using in game sprites from generation 1-5. Utilizes CNN for classification.
+-   [@predictingdualtypes]: Trying to predict dual pokemon types (`type_1` and `type_2`) using KNN. For pokemon with only one type, they imputed `type_2` as a repeat of `type_1`, however only predicted for one observation.
+-   [@multilabclasstf]: Trying to do multi-label classification with NN in TensorFlow using the in game sprite images.
+-   [@pokemontypepredstats]: Multi-label classification using MultiLabelBinarizer, basically one-hot encoding the 18 types and thus allowing it to predict more than one class. Another approach used is classifier chaining and label powersets. The data used only includes the stats of each Pokémon.
+-   [@whatsthatpokemon]: Multi-label classification of both types using CNN and fully-connected network (SNN) with pokemon in game sprite images.
+-   [@typeusingpokedexentries]: Multi-label classification of both types using natural language processing (NLP) on the pokemon's pokedex descriptions.
 
 # Methods and Results
 
@@ -156,8 +150,7 @@ First, the hyperparameters in the discretized search space may be far from the t
 Second, the number of models needed to be fit increases exponentially with the number of dimensions in the search space.
 This forces one to reduce the density of values in each dimension in order to keep the tuning process manageable.
 
-To address the issue, we use Bayesian optimization (BayesOpt).[@snoek2012practical]
-Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy.
+To address the issue, we use Bayesian optimization (BayesOpt).[@snoek2012practical] Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy.
 We then treat the samples as data and fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space.
 In doing so, BayesOpt chooses the next sample according to a balance of exploration and exploitation.
 For exploration, BayesOpt targets points in regions with high uncertainty to gather information.
@@ -178,8 +171,7 @@ For regularization, ElasticNet encompasses both L1 and L2 penalties (and with a 
 We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength.
 Specifically, we utilize Bayesian Optimization to sample over the entire continuous space with ranges of the ratio of the L1 and L2 penalties and `C` being $[0.0, 1.0]\times [10^{-4}, 10^{4}]$.
 
-**TODO: selected hyperparameters**
-After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time.
+**TODO: selected hyperparameters** After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time.
 The coefficient `C` fluctuates between the ranges of $[0, 5]$ indicating stronger regularization.
 Overall, we obtain a model accuracy of $99.147\%$.
 
@@ -193,8 +185,7 @@ As a result, it would suggest that the `type_2` and `damage_from_{Type}` variabl
 We trained support vector machine (SVM) models using the `scikit-learn` package in Python.
 The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output.
 For tuning, we consider the linear, polynomial, and radial basis function (RBF) kernels.
-The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels]
-Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel.
+The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels] Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel.
 Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between $[2, 5]\times[10^{-4}, 10^{4}]\times[10^{-3}, 10^{3}]\times[0.0, 1.0]$ for the polynomial kernel.
 For the RBF kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
 
@@ -213,12 +204,9 @@ After removing these features, the overall model accuracy falls to $46.583\%$.
 For random forests, we utilized the `scikit-learn` package in Python.
 The search space of hyperparameters we tested include
 
-- `criterion`: The splitting criterion at each node, either Gini index or logistic loss (equivalent to entropy).
-- `max_features`: The number of random features to try at each split.
-  Ranges from 1 to the number of features in the dataset.
-- `max_depth`: the maximum depth of the tree.
-  Ranges from 1 to the number of observations, but in practice we do not need even close to that much.
-  We generously limit this to the number of features, to make the optimization problem easier.
+-   `criterion`: The splitting criterion at each node, either Gini index or logistic loss (equivalent to entropy).
+-   `max_features`: The number of random features to try at each split. Ranges from 1 to the number of features in the dataset.
+-   `max_depth`: the maximum depth of the tree. Ranges from 1 to the number of observations, but in practice we do not need even close to that much. We generously limit this to the number of features, to make the optimization problem easier.
 
 After hyperparameter tuning, we observe that in general the Gini index criterion was preferred.
 The optimal `max_depth`s range between 10 and 38.
@@ -244,7 +232,6 @@ After removing `type_2` and `damage_from_{Type}`, we find that the prediction ta
 In this case, the broad grid search selects `H_layer` = 2, `node` = 1300, and `epoch` = 200 as initial values for random search.
 The nested CV result shows an average of $45.160\%$ accuracy with lowest fold having $43.454\%$ and highest fold having $45.940\%$ accuracy.
 
-
 # Appendix
 
 ## Initial Hyperparameter Values for Neural Networks
@@ -259,3 +246,9 @@ With the "optimized" hyperparameters, we conduct a nested CV to evaluate the alg
 After removing `type_2` and `damage_from_{Type}`, we find that the prediction task becomes much more difficult, thus we need more expressive models to converge within a reasonable number of epochs.
 This time, the first broad grid search is over `H-layer` (between 1 and 4) and `node` (between 1000 and 2000), fixing `epoch` = 600.
 After examining the training curves of the models from the first grid search, we choose the second grid search over `epoch` to be between 100 and 300.
+
+```{r, child=c('rmd/converted_ipynb/logistic_regression.md', 'rmd/converted_ipynb/support_vector_machine.md', 'rmd/converted_ipynb/random_forest.md', 'rmd/converted_ipynb/neural_network_base.md', 'rmd/converted_ipynb/neural_network_hard.md')}
+```
+
+```{r, child=c('rmd/converted_py/model/__init__.md', 'rmd/converted_py/model/duplication.md', 'rmd/converted_py/model/model.md', 'rmd/converted_py/model/sk_model.md', 'rmd/converted_py/scrape/util/dict.md', 'rmd/converted_py/scrape/util/soup.md', 'rmd/converted_py/scrape/util/sprite.md', 'rmd/converted_py/scrape/__init__.md', 'rmd/converted_py/scrape/scrape.md', 'rmd/converted_py/scrape/variant.md', 'rmd/converted_py/tune/__init__.md', 'rmd/converted_py/tune/dimension.md', 'rmd/converted_py/tune/outer_cv.md', 'rmd/converted_py/tune/sk_bayes.md', 'rmd/converted_py/tune/tuner.md', 'rmd/converted_py/util/__init__.md', 'rmd/converted_py/util/accuracy.md', 'rmd/converted_py/util/confusion.md', 'rmd/converted_py/util/duplication.md', 'rmd/converted_py/util/parallel.md')}
+```

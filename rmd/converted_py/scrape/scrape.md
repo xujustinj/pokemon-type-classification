@@ -1,3 +1,6 @@
+## `scrape/scrape.py`
+
+```{py}
 from os import path, mkdir
 
 from bs4 import BeautifulSoup
@@ -172,3 +175,4 @@ def all_variants() -> Iterator[Variant]:
             soup=variant_soup,
             sprite=variant_sprite,
         )
+```
