@@ -139,7 +139,9 @@ Next we also investigate the strength of the model without the features `type_2`
 
 Overall each classifier performed extremely well (over 90% accuracy) when `type_2` and `damage_from_{TYPE}` were included in the feature space. This result is not entirely surprising since these features provide a ton of additional information that is evidently very useful when trying to predict the primary type. As discussed in the introduction, certain types of pokemon have determined weaknesses to other specfic types in terms of damage taken. Additionally, since the `damage_from_{TYPE}` variables would effectively eliminate some of the possible types, the `type_2` variable would provide even more information about the possible values that `type_1` can take on. Thus, the performance of the models are not unexpected but very welcome. 
 
-With this information, we move onto investigate how the same models will perform without the `type_2` and `damage_from_{TYPE}`. 
+With this information, we move onto investigate how the same models will perform without the `type_2` and `damage_from_{TYPE}`. From the confusion matrix plots using `hardmode` (without `type_2` and `damage_from_{TYPE}`), the performance and accuracy of the models evidently drop by a significant factor. For instance, in the Confusion Matrix for Random Forest (Hard) by true label plot, we observe that the model was not able to predict any flying types correctly and did extremely poorly for fairy types. This is likely due to a small sample size for certain types, for example there exists a sparcity of primary flying type (only 8 observations) and fairy type pokemon in our dataset. Another interesting note is that a lot of pokemon get their primary type as water while actually belonging to another type by the random forest model, this could be potentially due to the colour of the sprites just so happening to be more blue. 
+
+The confusion matrix plots using `hardmode `for each model also allow us to constrast between primary types. For instance using the random forest model, a significant portion of primary ice and poison type pokemon get predicted as water.
 
 # Discussion
 
