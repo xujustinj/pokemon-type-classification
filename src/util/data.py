@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
-_DATA_PATH = "../data/scrape_from_scratch.csv"
+_DATA_PATH = "../data/scraped.csv"
 
 _N_CLASS = 18
 _N_TYPE_2 = _N_CLASS + 1
