@@ -20,7 +20,7 @@ class SKModel(Model, Generic[SKClassifier]):
     """
 
     def __init__(self, model: SKClassifier, config: Config):
-        assert isinstance(model, SKClassifier)
+        assert isinstance(model, BaseEstimator)
 
         super().__init__(config)
         self._model = model
