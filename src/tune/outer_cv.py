@@ -10,7 +10,6 @@ from sklearn.model_selection import KFold, StratifiedKFold
 
 from model import Model
 from util import load_data, multiset_accuracy, plot_confusion
-from .duplication import DuplicationTuner
 from .tuner import Tuner, SearchSpace
 
 
@@ -47,7 +46,7 @@ def _outer_cv_fold(
     to one model type with hyperparamater tuning in inner folds.
 
     Args:
-        tuner (Trainer[M]): The trainer for model type M
+        tuner (Tuner[M]): The tuner for model type M
         search (SearchSpace): The search space for hyperparameters
         n_folds_inner (int): The number of inner folds
         model_dir (str): The path to save trained models
@@ -106,11 +105,11 @@ def outer_cv(
     tuner: Tuner[M],
     search: SearchSpace,
     name: str,
+    duplicate: bool,
+    hard_mode: bool,
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
     n_jobs: int = 1,
-    duplicate: bool = False,
-    hard_mode: bool = False,
 ) -> float:
     """Apply nested cross validation and find average cross validation accuracy.
 
@@ -129,18 +128,27 @@ def outer_cv(
     Returns:
         float: The outer fold average cross validation accuracy
     """
-    duplicate = isinstance(tuner, DuplicationTuner)
-
     n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold
 
     X, y = load_data(hard_mode=hard_mode, duplicate=duplicate)
     results: list[dict[str, Any]] = []
 
+    if duplicate:
+        if hard_mode:
+            name = f"{name} (Duplication, Hard)"
+        else:
+            name = f"{name} (Duplication)"
+    else:
+        if hard_mode:
+            name = f"{name} (Hard)"
+        else:
+            name = f"{name} (Base)"
+
     model_dir = os.path.join(
         BASE_MODEL_DIR,
         name.replace(" ", "_") \
-            .replace("(", "") \
-            .replace(")", "") \
+            .replace("(", "").replace(")", "") \
+            .replace(",", "") \
             .lower(),
     )
     if not os.path.exists(model_dir):

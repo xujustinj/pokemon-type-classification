@@ -31,18 +31,15 @@ class Tuner(Generic[M], ABC):
         search: SearchSpace,
         split: Splitter,
     ) -> M:
-        """Tune hyperparameters of models of type M.
-
-        Tune the model hyperparameters for models of type M 
-        given the X-values and y-values of the training data. 
+        """Tune hyperparameters of a model using cross-validation.
 
         Args:
-            X_train (np.ndarray): X-values of training data
-            y_train (np.ndarray): y-values of training data
-            search (SearchSpace): The search space for hyperparameters
-            split (Splitter): A cross validation generator
+            X_train (ndarray): X-values of the training data.
+            y_train (ndarray): y-values of the training data.
+            search (SearchSpace): The search space for the hyperparameters.
+            split (Splitter): A cross validation generator.
 
         Returns:
-            M: The trained model of type M
+            model: A fitted model with the optimal hyperparameters.
         """
         pass

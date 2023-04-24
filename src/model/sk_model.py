@@ -1,21 +1,20 @@
 import numpy as np
-from sklearn.svm import SVC
+from sklearn.base import BaseEstimator
 
 from .model import Model, Config
 
 
-class SupportVectorMachineModel(Model):
-    """A support vector machine classification model.
-
-    Implemented with sklearn.
+class SKModel(Model):
+    """Wrapper for an sklearn model.
 
     Args:
-        model (SVC): The sklearn SVC model.
+        model (BaseEstimator): An sklearn classification model. Must support
+            predict() and predict_proba() methods. e.g.: LogisticRegression
         config (Config): The hyperparameters of the model.
     """
 
-    def __init__(self, model: SVC, config: Config):
-        assert isinstance(model, SVC)
+    def __init__(self, model: BaseEstimator, config: Config):
+        assert isinstance(model, BaseEstimator)
 
         super().__init__(config)
         self._model = model

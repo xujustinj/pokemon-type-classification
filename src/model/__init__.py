@@ -1,7 +1,3 @@
 from .model import Model, Config
-
-from .logistic_regression import LogisticRegressionModel
-from .support_vector_machine import SupportVectorMachineModel
-from .random_forest import RandomForestModel
-
-from .duplication import DuplicationModel
+from .sk_model import SKModel
+from .duplication import wrap_sklearn_classifier_via_duplication

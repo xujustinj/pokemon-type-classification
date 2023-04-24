@@ -110,7 +110,7 @@ def plot_confusion(
     display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
     plt.rcParams['figure.figsize'] = [10, 10]
     plt.figure(figsize=(10,10))
-    display.plot(xticks_rotation='vertical', values_format=".0%")
+    display.plot(xticks_rotation=45, values_format=".0%")
     plt.title(f"Confusion Matrix for {name}")
     plt.savefig(path)
     plt.show()
