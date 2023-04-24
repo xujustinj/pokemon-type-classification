@@ -188,21 +188,42 @@ As a result, it would suggest that the `type_2` and `damage_from_{Type}` variabl
 
 We trained SVM models with the Scikit-Learn package in Python.
 The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output.
-For tuning, we consider the linear, polynomial, and radial basis function kernels.
-The sigmoid kernel is never guaranteed to be positive semi-definite and therefore, avoided.
+For tuning, we consider the linear, polynomial, and radial basis function (RBF) kernels.
+The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels]
 Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel.
 Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between $[2, 5]\times[10^{-4}, 10^{4}]\times[10^{-3}, 10^{3}]\times[0.0, 1.0]$ for the polynomial kernel.
-For the radial basis function kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
+For the RBF kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
 
-We decided that for the decision_function_shape, it makes the most sense to use one-versus-rest (OVR) rather than one-versus-one (OVO).
-This is because there are $18$ classes in the data set, and OVR will significantly reduce the complexity of SVM by only having 18 models, whereas OVO will create $18 \times 17 = 306$ models which would increase the model complexity, training time, and the risk of overfitting.
+There are two formulations of multiclass classification using SVMs: one-versus-rest (OVR) and one-versus-one (OVO).
+We decide to use OVR because it fits one SVM for each of the 18 classes, whereas OVO will create $18 \times 17 = 306$ models which would increase the model complexity, training time, and the risk of overfitting.
 
-After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that in general, the best kernel was radial basis function with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$.
+After hyperparameter tuning, we observe that in general, the best kernel was the RBF with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$.
 Overall, we obtain a model accuracy of $96.868\%$.
 
 Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{Type}` without changing the search space.
 We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively.
 After removing these features, the overall model accuracy falls to $46.206%$.
+
+## Random Forest
+
+For random forests, we utilized the Scikit-Learn package in Python.
+The search space of hyperparameters we tested include
+
+- `criterion`: The splitting criterion at each node, either Gini index or logistic loss (equivalent to entropy).
+- `max_features`: The number of random features to try at each split.
+  Ranges from 1 to the number of features in the dataset.
+- `max_depth`: the maximum depth of the tree.
+  Ranges from 1 to the number of observations, but in practice we do not need even close to that much.
+  We generously limit this to the number of features, to make the optimization problem easier.
+
+After hyperparameter tuning, we observe that in general the Gini index criterion was preferred.
+The optimal `max_depth`s range between 10 and 38.
+The optimal `max_features` range between 35 and 74.
+Overall, we obtain a model accuracy of $96.491\%$.
+
+Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{Type}`, with the same search space as before.
+We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between $[13, 37]\times[3, 37]$ respectively.
+Overall, we obtain a model accuracy of $44.971\%$ after removing these features.
 
 ## Neural Network
 
@@ -228,23 +249,3 @@ The "optimized" hyper parameters are `H_layer` = 2,`node` = 1300, `epoch` = 200,
 The nested CV result shows an average of $45.16\%$ accuracy with lowest fold having $40.758\%$ and highest fold having $49.763\%$ accuracy.
 This suggest the method might be unstable when applied to the dataset and could be affected by the randomness in fitting as well.
 (Check appendix for optimization procedure)
-
-## Random Forest
-
-For random forests, we utilized the Scikit-Learn package in Python.
-The search space of hyperparameters we tested include
-
-- `max_features`: the number of random features to try at each split.
-- `max_depth`: the maximum depth of the tree.
-
-The maximum features depend on the number of features in the dataset.
-Meanwhile, the maximum theoretical depth is as much as the number of observations, but in practice we do not need even close to that much.
-We also generously limit it to the number of features, to make the optimization problem easier.
-
-After hyperparameter tuning, we observe that in general the `gini` index criterion was preferred.
-while the `max_depth` and `max_features` fluctuate between $[10, 38] \times [35, 74]$ respectively.
-Overall, we obtain a model accuracy of $96.491\%$.
-
-Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{Type}`, with the same search space as before.
-We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between $[13, 37]\times[3, 37]$ respectively.
-Overall, we obtain a model accuracy of $44.971\%$ after removing these features.
