@@ -1,0 +1,103 @@
+---
+title: "STAT441 Pokemon Final"
+output: pdf_document
+urlcolor: blue
+link-citations: yes
+citecolor: blue
+linkcolor: blue
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary
+
+# Introduction
+
+Pokémon is one of the most popular games where players catch and train monsters known as Pokémon. As each Pokémon has its own types, it raises people’s interest in Pokémon type prediction based on other attributes of the Pokemon. However, many of the attempts failed as people have a limited number of observations due to game release or they limited the attributes used. In our study, we examine how prediction results change by including more Pokémon (including variants) up to Gen VIII and using a larger set of attributes. We also wish to evaluate the performance of different classification methods and are looking forward to predicting the second type of Pokémon.
+
+Pokemon is one of the most popular and successful gaming franchises worldwide. In the game, players catch and train monsters known as Pokemon. Each Pokemon has one or more variations, each with distinct attributes such as types and combat stats.
+
+The objective of the Pokemon games is to battle other Pokemon trainers and defeat their Pokemon in combat. To succeed, the player needs to strategize based on the types of Pokemon used by their opponent. Each Pokemon has one or two types, such as “Water” and “Fire”. Certain types have advantages against others in combat. For example, Water-type Pokemon deal increased damage to Fire-type Pokemon.
+
+Keeping track of types is difficult because there are 18 of them. This raises our interest in using classification techniques to understand the relationship between the type of Pokemon and its attributes. More importantly, we wish to analyze the importance of the covariates used in Pokemon type classification and evaluate the performance of different classification models on the Pokemon dataset.
+
+# Dataset
+
+The [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) contains one entry for each distinct Pokémon variant in generations 1-8 of the Pokémon games. It was primarily scraped from [Pokémon DB](https://pokemondb.net/pokedex/all), a website that lets users look up the attributes of any Pokémon. Attributes include generation number, height, combat/training/breeding characteristics, and damage multipliers against each of the 18 types.
+
+To augment this dataset, we created our own scrapers using the Python libraries `requests`, `beautifulsoup`, and `imageio` to find missing data in the Pokemon DB and add further attributes about the sprites of each Pokemon. We eliminate text features that have too many distinct values. Egg type is often exactly the same as Pokemon type, so we also eliminate it because it would otherwise make the analysis uninteresting. After all transformations, our dataset contains 3 categorical features (including type), 1 binary feature, and 50 numerical features.
+
+The numerical features:
+
+* `generation`: Denotes the chronological divisions of Pokémon, from 1st generation to 8th 
+* `type_number`: The number of types the Pokémon belong to, either 1 or 2
+* `height_m`: The height of the Pokémon in meters
+* `weight_kg`: The weight of the Pokémon in kilograms
+* `abilities_number`: The number of abilities of the Pokémon
+* `total_points`: Total number of base points
+* `hp`: The base health points (hp) of the Pokémon
+* `attack`: The base attack of the Pokémon
+* `defense`: The base defense of the Pokémon
+* `sp_attack`: The base special attack of the Pokémon
+* `sp_defense`: The base special defense of the Pokémon
+* `speed`: The base speed of the Pokémon
+* `catch_rate`: Catch rate of the Pokémon
+* `base_friendship`: The base friendship of the Pokémon
+* `base_experience`: The base experience of a wild Pokémon when caught
+* `maximum_experience`: The experience needed for the Pokémon to reach the maximum level
+* `egg_type_number`: The number of groups where a Pokémon can hatch
+* `proportion_male`: The proportion of Pokémon that is male. Filled with 50% if the Pokémon is genderless
+* `egg_cycles`: The number of cycles (255-257 steps) required to hatch an egg of the Pokémon
+* `damage_from_{ENEMY_TYPE}`: The damage received coefficient when battling a Pokémon with an ENEMY_TYPE. 
+* `sprite_size`: The proportion of pixels occupied by the Pokémon's sprite
+* `sprite_perimeter`: The number of pixels occupied by the sprite's boundary
+* `sprite_perimeter_to_size_ratio`: The ratio of the sprite's perimeter to its actual size
+* `sprite_{red/green/blue/brightness}_mean`: The mean of that pixel value over the entire sprite
+* `sprite_{red/green/blue/brightness}_sd`: The (population) standard deviation of that pixel over the entire sprite
+* `sprite_overflow_{vertical/horizontal}`: the amount by which the sprite touches the boundaries of the image vertically/horizontally
+
+The categorical features:
+
+* `status`: Whether the Pokémon is normal / legendary / sub-legendary / mythical 
+* `type_1`: The Primary Type of the Pokémon 
+* `type_2`: The Secondary Type of the Pokémon if it exists 
+* `has_gender`: Whether the Pokémon has a gender
+
+# Previous Explorations
+
+```{r child="tables/previous_works.md"}
+```
+
+# Methods
+
+## Nested Cross-Validation
+
+Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we are working with a small amount of data. To make the most of this, we use 5-fold nested cross validation so that every observation can take part in both the fitting and evaluation of models. Using a fixed set of folds, we perform hyperparameter tuning on 4 folds at a time and use the final model to make predictions on the remaining fold. Through this process, we obtain one predicted type for each observation, and use this to produce an accuracy score and a confusion matrix.
+
+## Hyperparameter Tuning
+
+In each outer fold of nested cross validation, we perform another inner 5-fold cross validation to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous, so it is impossible to exhaustively search all possible values. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})^2$.
+
+A simple approach is grid search, where each dimension of the continuous space is discretized into a small number of values. One then performs an exhaustive search for the combination of values that maximizes the 5-fold cross validation accuracy of a model fitted with those hyperparameters. For example, the parameter space of regularized logistic regression can be reduced to ${10^{-4}, 10^{-2}, 1, 10^2, 10^4}^2$, which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, it is possible that the true optimal parameters are not close to any of these values. Second, in higher-dimensional hyperparameter spaces, the number of points increases exponentially, forcing one to reduce the density of values in each dimension in order to keep the tuning process to a reasonable time. Even if fitting and evaluating a single model takes only 10 seconds, evaluating a grid of just 16 points over 5x5 nested cross validation repeats the process 400 times, taking over 1 hour.
+
+To better handle tuning in continuous hyperparameter spaces, we use Bayesian optimization (BayesOpt). Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model’s cross validation accuracy. Treating the samples as data, we fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space. BayesOpt chooses the next sample according to a balance of exploration and exploitation. For exploration, BayesOpt targets points in regions with high uncertainty to gather information. For exploitation, BayesOpt targets points in regions with high expected accuracy, to make incremental improvements. After some number of samples (50 in our case), BayesOpt reports the sample with the highest accuracy as the optimum. While it is not necessarily deterministic, it solves the problems faced by grid search. Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup. [@snoek2012practical]
+
+## Logistic Regression
+
+## SVM
+
+## Neural Network
+
+## Random Forest
+
+# Results
+
+# Discussion
+
+# References {#sec:ref}
+
+# Appendix
+
