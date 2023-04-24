@@ -1,5 +1,5 @@
 ---
-title: "Performance of Classification Methods in Pokemon Type Prediction"
+title: "Performance of Classification Methods in Pokémon Type Prediction"
 author: |
   | Allen Zheng, Jerry Zhen, Justin Xu, Ryan Wu -- University of Waterloo
 urlcolor: blue
@@ -22,23 +22,23 @@ require(tinytex)
 
 # Summary
 
-Predicting a Pokemon's type is an inherently difficult task, with 18 possible categories and no clear pattern.
+Predicting a Pokémon's type is an inherently difficult task, with 18 possible categories and no clear pattern.
 Therefore, there is great appeal in applying new methods in an attempt to achieve great accuracy.
-In this report, we apply classification methods such as logistic regression, support vector machines (SVMs), random forests, and neural networks to an enhanced version of the Pokemon Database dataset.
+In this report, we apply classification methods such as logistic regression, support vector machines (SVMs), random forests, and neural networks to an enhanced version of the Pokémon Database dataset.
 For each model, we perform hyperparameter tuning using Bayesian Optimization and evaluate the tuning process using stratified nested cross-validation.
-We find that the enhancements allow all models to achieve near-perfect accuracy.
+We find that the enhanced features allow all models to achieve near-perfect accuracy.
 Thus, we turn our attention to a subset of the features to better compare the models.
-Further, to deal with sparse type categories, we investigate a "duplication" method for multi-label prediction, where a single-label classifier is trained on two copies of each Pokemon corresponding to each of the Pokemon's types.
+Further, to deal with sparse type categories, we investigate a "duplication" method for multi-label prediction, where a single-label classifier is trained on two copies of each Pokémon corresponding to each of the Pokémon's types.
 **TODO: conclusion**
 
 # Introduction
 
 Pokémon is one of the most popular games worldwide.
-In it, players catch, train, and battle using monsters known as Pokemon.
-In particular, each Pokemon has one or two types such as the elemental type "Water" or the abstract type "Fighting".
+In it, players catch, train, and battle using monsters known as Pokémon.
+In particular, each Pokémon has one or two types such as the elemental type "Water" or the abstract type "Fighting".
 Each type has advantages and disadvantages against others in battle.
-As a result, Pokemon players share great interest in using effective types to win battles.
-Many have attempted to predict a Pokemon's type using other attributes.
+As a result, Pokémon players share great interest in using effective types to win battles.
+Many have attempted to predict a Pokémon's type using other attributes.
 We would like to compare the methods they used in a standard setting, however their datasets contain different observations and features.
 Here, we use an improved data set with a more diverse feature space.
 Using a standard nested cross-validation method, we compare the performance between different models.
@@ -47,10 +47,10 @@ Using a standard nested cross-validation method, we compare the performance betw
 
 ## Data Scraping
 
-Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the website [Pokémon DB](https://pokemondb.net/pokedex/all).
+Using the [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the website [Pokémon DB](https://pokemondb.net/pokedex/all).
 We chose numerical features, or categorical features with a small number of different values.
-The scraped attributes include biometrics, combat statistics, and training characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokemon.
-To augment this data, we scraped images of each Pokemon and computed simple characteristics of the image to serve as additional attributes.
+The scraped attributes include biometrics, combat statistics, and training characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokémon.
+To augment this data, we scraped images of each Pokémon and computed simple characteristics of the image to serve as additional attributes.
 A detailed discussion on data processing can be found in Appendix.
 
 ### Categorical and Binary Features
@@ -127,7 +127,7 @@ knitr::include_graphics("pikachu.png")
 * [@multilabclasstf]: Trying to do multi-label classification with NN in TensorFlow using the in game sprite images.
 * [@pokemontypepredstats]: Multi-label classification using MultiLabelBinarizer, basically one-hot encoding the 18 types and thus allowing it to predict more than one class.
   Another approach used is classifier chaining and label powersets.
-  The data used only includes the stats of each Pokemon.
+  The data used only includes the stats of each Pokémon.
 * [@whatsthatpokemon]: Multi-label classification of both types using CNN and fully-connected network (SNN) with pokemon in game sprite images.
 * [@typeusingpokedexentries]: Multi-label classification of both types using natural language processing (NLP) on the pokemon’s pokedex descriptions.
 
@@ -135,11 +135,11 @@ knitr::include_graphics("pikachu.png")
 
 ## Nested Cross-Validation
 
-Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we are working with a small amount of data.
+Acknowledging that the average `type_1` category has fewer than 60 Pokémon, we are working with a small amount of data.
 To make the most of this, we use 5-fold nested cross validation (CV) so that every observation can take part in both the fitting and evaluation of models.
 The folds are stratified by `type_1` to ensure a similar type distribution in all folds.
 For each train-test split, we perform hyperparameter tuning on the training set and use the tuned model to make predictions on the remaining fold.
-Through this process, we obtain one predicted type for each Pokemon.
+Through this process, we obtain one predicted type for each Pokémon.
 Comparing the predicted types to the actual types, we get an overall accuracy score for the model and plot a confusion matrix.
 
 ## Hyperparameter Tuning
@@ -166,9 +166,13 @@ After some number of samples (50 in our case), BayesOpt reports the sample with 
 While it is not necessarily deterministic, it solves the problems faced by grid search.
 Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup.
 
+To implement BayesOpt, we used `scikit-optimize`, which is only capable of tuning `scikit-learn` models.
+The neural network model is not implemented with `scikit-learn`, so it was tuned using random search.
+It is similar to BayesOpt in that it is nondeterministic, but random search chooses its samples entirely at random.
+
 ## Logistic Regression
 
-In Logistic Regression, we focused on multinomial logistic regression and used the Scikit-Learn package in Python.
+We focused on multinomial logistic regression using `scikit-learn` package in Python.
 For multinomial logistic regression with $K \ge 2$ classes, we fit a single classifier with K outputs (one of them is 1), and take the softmax thereof.
 For regularization, ElasticNet encompasses both L1 and L2 penalties (and with a weak enough regularization term, no-penalty as well).
 We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength.
@@ -182,11 +186,11 @@ Overall, we obtain a model accuracy of $96.302\%$.
 We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space.
 We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization.
 The model performance decreased significantly where the overall prediction accuracy decreased to $36.903\%$.
-As a result, it would suggest that the `type_2` and `damage_from_{Type}` variables are very significant features in predicting Pokemon type.
+As a result, it would suggest that the `type_2` and `damage_from_{Type}` variables are very significant features in predicting Pokémon type.
 
-## SVM (Support Vector Machine)
+## Support Vector Machines
 
-We trained SVM models with the Scikit-Learn package in Python.
+We trained support vector machine (SVM) models using the `scikit-learn` package in Python.
 The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output.
 For tuning, we consider the linear, polynomial, and radial basis function (RBF) kernels.
 The sigmoid kernel is never guaranteed to be positive semi-definite and is therefore avoided.[@kernels]
@@ -204,9 +208,9 @@ Next, we investigate the strength of the model without the features `type_2` and
 We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively.
 After removing these features, the overall model accuracy falls to $46.206%$.
 
-## Random Forest
+## Random Forests
 
-For random forests, we utilized the Scikit-Learn package in Python.
+For random forests, we utilized the `scikit-learn` package in Python.
 The search space of hyperparameters we tested include
 
 - `criterion`: The splitting criterion at each node, either Gini index or logistic loss (equivalent to entropy).
@@ -227,25 +231,31 @@ Overall, we obtain a model accuracy of $44.971\%$ after removing these features.
 
 ## Neural Network
 
-We used PyTorch to build the Neural Network and tried to optimize the following hyperparameters: `H-layer`: number of hidden layers, `node`: number of nodes per layer, `drop`: dropout rate, `epoch`: number of epochs.
-Note for simplicity and computation feasibility, we assumed a constant number of Nodes per layer.
-In addition, as Neural Network was built using PyTorch, we could not use Bayesian optimization but tried to optimize hyperparameters using a greedy algorithm approach and CV.
-Essentially, we do a grid search over the proposed search space for `number of hidden layers` `H-layer` and `node` (We fix a reasonable `drop`, `epoch`, `batch`) and another grid search over `drop`,`epcoh` and `batch` with "optimized" `H-layer` and `node`.
-Note we use CV to accurately evaluate the performance of the model with the hyperparameters from the proposed search space.
-We also mention that as we used randomly sampled batches to update weights and biases, the trained model contains randomness and may impact our judgment.
-Hence, we perform CV for multiple times ($5$ in our case) to average out the randomness.
+We used PyTorch to implement neural networks.
+Our network is a multilayer perceptron with `H-layer` hidden layers and `node` number of nodes per hidden layer.
+The model is trained for `epoch` epochs using batch stochastic gradient descent with an Adam optimizer.
+`epoch` acts as a regularization parameter; by stopping the training process early it can prevent overfitting.
+
+We using `H_layer` = 2, `node` = 250, and `epoch` = 350 as a rough estimate of the optimal values, selected using a broad grid search (see Appendix).
+Then, we select hyperparameters using random search (20 steps) of nearby values.
+The nested CV result shows an average of $98.957\%$ accuracy with two folds having $100\%$ accuracy.
+
+After removing `type_2` and `damage_from_{Type}`, we find that the prediction task becomes much more difficult, thus we need more expressive models to converge within a reasonable number of epochs.
+In this case, the broad grid search selects `H_layer` = 2, `node` = 1300, and `epoch` = 200 as initial values for random search.
+The nested CV result shows an average of $45.16\%$ accuracy with lowest fold having $40.758\%$ and highest fold having $49.763\%$ accuracy.
+
+
+# Appendix
+
+## Initial Hyperparameter Values for Neural Networks
+
+Since neural networks are more expensive to train than the other models explored here, we first conduct a broad grid search to find approximate optimal values of the tuning parameters `H-layer`, `node`, and `epoch`.
+Instead of BayesOpt, we do a broad grid search with cross-validation for `H-layer` (between 1 and 5) and `node` (between 100 and 300), fixing `epoch` = 400 to a reasonable value.
+Then, we perform another broad grid search over `epoch` (between 300 and 550) using the optimal `H-layer` and `node`.
+Due to the variability of batch stochastic gradient descent, we repeat the training process 5 times for each CV fold to reduce variance.
 With the "optimized" hyperparameters, we conduct a nested CV to evaluate the algorithm performance where we randomly generate hyperparameters that is close to "optimized" hyperparameters in each inner CV in search of a potentially better model.
 (Note we will include the "optimized" hyperparameters in nested CV).
 
-With all features included, we proposed the first search space `H-layer`$\times$`node` $= \{1,2,3,4,5\}\times\{100+25k_0\}$ for $k_0\in \{0,...,8\}$ (with `epoch` = 400, `batch` = 200, `drop` = 0.2) and second search space `epoch`$\times$`batch`$\times$`drop` $=\{300+50k_1\}\times\{100+25k_2\}\times\{0.2+0.025k_3\}$, $k_1\in \{0,...,5\}$, $k_2 \in \{0,...,6\}$ and $k_3 \in \{0,...,4\}$.
-The "optimized" hyper parameters is `H_layer` = 2, `node` = 250, `epoch` = 350, `batch` = 125, `drop` = 0.2.
-Note we found that and it appeared that optimization over `epoch`,`batch`,`drop` was necessary.
-The nested CV result shows an average of $98.957\%$ accuracy with two folds having $100\%$ accuracy.
-(Check appendix for optimization procedure)
-
-We applied the same procedure removing `type_2` and `damage_from_{Type}`.
-The first search space is `H-layer`$\times$`node` $= \{1,2,3,4\}\times\{1000+100k_0\}$ for $k_0 \in \{0,...,10\}$ (with `epoch` = 600, `batch` = 200, `drop` = 0.2) and the second search space `epoch`$\times$`batch`$\times$`drop` $=\{100+50k_1\}\times\{100+25k_2\}\times\{0.2+0.025k_3\}$, $k_1 \in \{0,...,4\}$, $k_2 \in \{0,...,6\}$ and $k_3 \in \{0,...,4\}$.
-The "optimized" hyper parameters are `H_layer` = 2,`node` = 1300, `epoch` = 200, `drop` = 0.275.
-The nested CV result shows an average of $45.16\%$ accuracy with lowest fold having $40.758\%$ and highest fold having $49.763\%$ accuracy.
-This suggest the method might be unstable when applied to the dataset and could be affected by the randomness in fitting as well.
-(Check appendix for optimization procedure)
+After removing `type_2` and `damage_from_{Type}`, we find that the prediction task becomes much more difficult, thus we need more expressive models to converge within a reasonable number of epochs.
+This time, the first broad grid search is over `H-layer` (between 1 and 4) and `node` (between 1000 and 2000), fixing `epoch` = 600.
+After examining the training curves of the models from the first grid search, we choose the second grid search over `epoch` to be between 100 and 300.
