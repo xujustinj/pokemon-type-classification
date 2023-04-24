@@ -93,6 +93,15 @@ knitr::include_graphics("pikachu.png")
 ```{r child = 'previous-works.md'}
 ```
 
+* [@pokemondecisiontree]: Simple analysis of the pokemon dataset from generations 1-8. Trying to predict `type_1` using pokemon stats, generation number, as well as mythical/legendary status.
+* [@predictingpokemontypes]: Trying to predict pokemon `type_1` using naive bayes, random forest, and SVMs. Since flying type is severely underrepresented, they remove it and predict only 17 types. Uses pokemon stats, generation number, and legendary status. Additionally used grid search for hyper-parameter tuning, cross-validation, and leave one out cross-validation.
+* [@whosthatnn]: Trying to predict dual pokemon types (`type_1` and `type_2`) using in game sprites from generation 1-5. Utilizes CNN for classification.
+* [@predictingdualtypes]: Trying to predict dual pokemon types (`type_1` and `type_2`) using KNN. For pokemon with only one type, they imputed `type_2` as a repeat of `type_1`, however only predicted for one observation.
+* [@multilabclasstf]: Trying to do multi-label classification with NN in TensorFlow using the in game sprite images.
+* [@pokemontypepredstats]: Multi-label classification using MultiLabelBinarizer, basically one-hot encoding the 18 types and thus allowing it to predict more than one class. Another approach used is classifier chaining and label powersets. The data used only includes the stats of each Pokemon.
+* [@whatsthatpokemon]: Multi-label classification of both types using CNN and fully-connected network (SNN) with pokemon in game sprite images.
+* [@typeusingpokedexentries]: Multi-label classification of both types using natural language processing (NLP) on the pokemon’s pokedex descriptions.
+
 # Methods and Results
 
 ## Nested Cross-Validation
