@@ -182,7 +182,7 @@ Overall, we obtain a model accuracy of $96.302\%$.
 We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space.
 We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization.
 The model performance decreased significantly where the overall prediction accuracy decreased to $36.903\%$.
-As a result, it would suggest that the `type_2` and `damage_from_{TYPE}` variables are very significant features in predicting Pokemon type.
+As a result, it would suggest that the `type_2` and `damage_from_{Type}` variables are very significant features in predicting Pokemon type.
 
 ## SVM (Support Vector Machine)
 
@@ -200,7 +200,7 @@ This is because there are $18$ classes in the data set, and OVR will significant
 After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that in general, the best kernel was radial basis function with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$.
 Overall, we obtain a model accuracy of $96.868\%$.
 
-Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}` without changing the search space.
+Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{Type}` without changing the search space.
 We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively.
 After removing these features, the overall model accuracy falls to $46.206%$.
 
