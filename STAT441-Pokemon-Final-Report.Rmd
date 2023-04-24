@@ -20,13 +20,13 @@ require()
 
 # Introduction
 
-Pokémon is one of the most popular games worldwide where Players catch, train and battle using monsters known as Pokemon. In particular, each Pokemon has one or two types such as "Water" and "fire" and their type may be effective against or being suppressed by other types during a Pokemon battle. As a result, Pokemon Players share great interest in exploiting the types to win battles and are enthusiastic in Pokemon type prediction using other of its attributes. However, many of the attempts failed as people have a limited number of observations due to game release or used limited attributes. Thus, to make improvements on previous studies, we use classification techniques to re-examine the relationship between Pokemon types and their other attributes with improved data set and a diverse feature space. More importantly, we compare the performance between different models through nested CV and attempt to predict the second type of Pokemon.
+Pokémon is one of the most popular games worldwide where players catch, train and battle using monsters known as Pokemon. In particular, each Pokemon has one or two types such as "Water" and "fire" and their type may be more effective or suppressed by other types during battle. As a result, Pokemon players share great interest in exploiting types to win battles and are enthusiastic in Pokemon type prediction using other attributes. However, many of the previous attempts have failed as people have a limited number of observations due to game release periods or used limited attributes by choice. Thus, in order to make improvements on previous studies, we use classification techniques to re-examine the relationship between Pokemon types and their other attributes with an improved data set and a more diverse feature space. More importantly, we compare the performance between different models through nested CV and additionally attempt to predict Pokemon's secondary type if it exists.
 
 # Dataset
 
 ## Data Scraping
 
-Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the Pokemon digital database [Pokémon DB](https://pokemondb.net/pokedex/all). The scraped attributes include `generation number`, `height`, `weight`, `combat` / `training` / `breeding` characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokemon. We also scraped images of each Pokemon and computed the imagery based data such as `size`, `RGB` value. Note that some features are eliminated as they posses challenges in model training or are irreverent in prediction. A detailed discussion on data processing can be found in Appendix.
+Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the Pokemon digital database [Pokémon DB](https://pokemondb.net/pokedex/all). The scraped attributes include `generation number`, `height`, `weight`, `combat` / `training` / `breeding` characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokemon. We also scraped images of each Pokemon and computed the imagery based data such as `size` and `RGB` value. Note that some features are eliminated as they posses challenges in model training or are irreverent in prediction. A detailed discussion on data processing can be found in Appendix.
 
 ## Feature introduction:
 
@@ -58,7 +58,7 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 | sp_defense            | The base special defense of the Pokémon                            |
 | speed                 | The base speed of the Pokémon                                      |
 | catch_rate            | Catch rate of the Pokémon                                          |
-| base_friendship       | The base friendship of the Poké mon                                |
+| base_friendship       | The base friendship of the Pokémon                                |
 | base_experience       | The base experience of a wild Pokémon when caught                  |
 | maximum_experience    | The experience needed for the Pokémon to reach the maximum level   |
 | egg_type_number       | The number of egg groups the Pokémon egg belongs to                |
@@ -82,20 +82,17 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 
 # Previous Explorations
 
-```{r child = 'previous-works.md'}
-```
-
 # Methods and Results
 
 ## Nested Cross-Validation
 
-Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we are working with a small amount of data. To make the most of this, we use 5-fold nested cross validation so that every observation can take part in both the fitting and evaluation of models. Using a fixed set of folds, we perform hyperparameter tuning on 4 folds at a time and use the final model to make predictions on the remaining fold. Through this process, we obtain one predicted type for each observation, and use this to produce an accuracy score and a confusion matrix.
+Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we are working with a small amount of data. To make the most of this, we use stratified 5-fold nested cross validation so that every observation can take part in both the fitting and evaluation of models as well as introduce a more balanced as well as accurate representation of the type distribution. Using a fixed set of folds, we perform hyperparameter tuning on 4 folds at a time and use the final model to make predictions on the remaining fold. Through this process, we obtain one predicted type for each observation, and use this to produce an accuracy score and a confusion matrix.
 
 ## Hyperparameter Tuning
 
-In each outer fold of nested cross validation, we perform another inner 5-fold CV (cross validation) to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous and makes exhaustive search impossible. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})\times (0,{\infty})$.
+In each outer fold of nested cross validation, we perform another inner stratified 5-fold CV (cross validation) to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous and makes exhaustive search impossible. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})\times (0,{\infty})$.
 
-In the early attempt, we tried grid search where we discretize the continuous search space and perform exhaustive search over the combination of hyperparameters in the search space. We then extract the hyperparameters that optimizes the model in a 5-fold CV and treat it as the optimal hyperparameters. For instance, we can reduce the search space of regularized logistic regression into $\{10^{-4}, 10^{-2}, 1, 10^2, 10^4\} \times \{10^{-4}, 10^{-2}, 1, 10^2, 10^4\}$ which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, the hyperparameters in the discretized search space may be far from the true optimal parameters and second, the number of models needed to fit with a higher-dimensional hyperparameter spaces increases exponentially. This forces one to reduce the density of values in each dimension in order to keep the tuning process manageable.
+In the early attempt, we tried grid search where we discretize the continuous search space and perform exhaustive search over the combination of hyperparameters in the search space. We then extracted the hyperparameters that optimizes the model in a stratified 5-fold CV and treat it as the optimal hyperparameters. For instance, we can reduce the search space of regularized logistic regression into $\{10^{-4}, 10^{-2}, 1, 10^2, 10^4\} \times \{10^{-4}, 10^{-2}, 1, 10^2, 10^4\}$ which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, the hyperparameters in the discretized search space may be far from the true optimal parameters and second, the number of models needed to fit with a higher-dimensional hyperparameter spaces increases exponentially. This forces one to reduce the density of values in each dimension in order to keep the tuning process manageable.
 
 To address the issue, we use Bayesian optimization (BayesOpt). Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy. We then treat the samples as data and fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space. In doing so, BayesOpt chooses the next sample according to a balance of exploration and exploitation. For exploration, BayesOpt targets points in regions with high uncertainty to gather information. For exploitation, BayesOpt targets points in regions with high expected accuracy to make incremental improvements. After some number of samples (50 in our case), BayesOpt reports the sample with the highest accuracy as the optimum. While it is not necessarily deterministic, it solves the problems faced by grid search. Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup. [@snoek2012practical]
 
@@ -106,6 +103,7 @@ In Logistic Regression, we focused on multinomial logistic regression and used t
 After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time. The coefficient `C` fluctuates between the ranges of $[0, 5]$ indicating stronger regularization. Overall, we obtain a model accuracy of $96.302\%$.
 
 We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space. We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization. The model performance decreased significantly where the overall prediction accuracy decreased to $36.903%$. As a result, it would suggest that the `type_2` and `damage_from_{TYPE}` variables are very significant features in predicting Pokemon type.
+
 
 ## SVM (Support Vector Machine)
 
@@ -135,10 +133,82 @@ After applying Bayesian Optimization and nested cross-validation with k = 5 fold
 
 Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}`, with the same search space as before. We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between [13, 37] and [3, 37] respectively. Overall, we obtain a model accuracy of 44.971% after removing these features.
 
-# Results
+# Interpretation of Results
 
 # Discussion
 
 # References {#sec:ref}
 
 # Appendix
+
+## Confusion Matrix on Test Data for Logistic Regression (Base) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/logistic_regression_base/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Logistic Regression (Base) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/logistic_regression_base/confusion_matrix_by_true.png")
+```
+
+## Confusion Matrix on Test Data for Logistic Regression (Hard) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/logistic_regression_hard/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Logistic Regression (Hard) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/logistic_regression_hard/confusion_matrix_by_true.png")
+```
+
+## Confusion Matrix on Test Data for Support Vector Machine (Base) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/support_vector_machine_base/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Support Vector Machine (Base) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/support_vector_machine_base/confusion_matrix_by_true.png")
+```
+
+## Confusion Matrix on Test Data for Support Vector Machine (Hard) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/support_vector_machine_hard/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Support Vector Machine (Hard) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/support_vector_machine_hard/confusion_matrix_by_true.png")
+```
+
+## Confusion Matrix on Test Data for Random Forest (Base) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/random_forest_base/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Random Forest (Base) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/random_forest_machine_base/confusion_matrix_by_true.png")
+```
+
+## Confusion Matrix on Test Data for Random Forest (Hard) by predicted label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/random_forest_machine_hard/confusion_matrix_by_pred.png")
+```
+
+## Confusion Matrix on Test Data for Random Forest (Hard) by true label
+
+```{r, out.width = "500px", echo = F, fig.align='center'}
+knitr::include_graphics("models/random_forest_machine_hard/confusion_matrix_by_true.png")
+```
