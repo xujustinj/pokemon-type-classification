@@ -1,0 +1,116 @@
+---
+title: "Performance of Classification Methods in Pokemon Type Prediction"
+author: |
+  | Allen Zheng, Jerry Zhen, Justin Xu, Ryan Wu -- University of Waterloo
+urlcolor: blue
+link-citations: yes
+citecolor: blue
+linkcolor: blue
+bibliography: references.bib
+output: 
+  bookdown::pdf_document2:
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require()
+```
+
+# Introduction
+
+Pokémon is one of the most popular games worldwide where Players catch, train and battle using monsters known as Pokemon. In particular, each Pokemon has one or two types such as "Water" and "fire" and their type may be effective against or being suppressed by other types during a Pokemon battle. As a result, Pokemon Players share great interest in exploiting the types to win battles and are enthusiastic in Pokemon type prediction using other of its attributes. However, many of the attempts failed as people have a limited number of observations due to game release or used limited attributes. Thus, to make improvements on previous studies, we use classification techniques to re-examine the relationship between Pokemon types and their other attributes with improved data set and a diverse feature space. More importantly, we compare the performance between different models through nested CV and attempt to predict the second type of Pokemon.
+
+# Dataset
+
+## Data Scraping
+
+Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420?select=pokedex_%28Update_04.21%29.csv) as an inspiration, we created our own scrapers with Python libraries `requests`, `beautifulsoup`, and `imageio` to scrape data from the Pokemon digital database [Pokémon DB](https://pokemondb.net/pokedex/all). The scraped attributes include `generation number`, `height`, `weight`, `combat` / `training` / `breeding` characteristics as well as the `weaknesses` (damage multipliers against other types) of each Pokemon. We also scraped images of each Pokemon and computed the imagery based data such as `size`, `RGB` value. Note that some features are eliminated as they posses challenges in model training or are irreverent in prediction. A detailed discussion on data processing can be found in Appendix.
+
+## Feature introduction:
+
+### The numerical features:
+
+| Feature Name          | Description                                                        |
+|:-------------------|:---------------------------------------------------|
+| generation            | The chronological divisions of Pokémon, from 1st generation to 8th |
+| type_number           | The number of types the Pokémon belong to, either 1 or 2           |
+| height_m              | The height of the Pokémon in meters                                |
+| weight_kg             | The weight of the Pokémon in kilograms                             |
+| abilities_number      | The number of abilities possessed by the Pokémon                   |
+| total_points          | Total number of base points                                        |
+| hp                    | The base health points (hp) of the Pokémon                         |
+| attack                | The base attack of the Pokémon                                     |
+| defense               | The base defense of the Pokémon                                    |
+| sp_attack             | The base special attack of the Pokémon                             |
+| sp_defense            | The base special defense of the Pokémon                            |
+| speed                 | The base speed of the Pokémon                                      |
+| catch_rate            | Catch rate of the Pokémon                                          |
+| base_friendship       | The base friendship of the Pokémon                                 |
+| base_experience       | The base experience of a wild Pokémon when caught                  |
+| maximum_experience    | The experience needed for the Pokémon to reach the maximum level   |
+| egg_type_number       | The number of egg groups the Pokémon egg belongs to                |
+| proportion_male       | The proportion of Pokémon that is male. Set to 50% if genderless.  |
+| egg_cycles            | The number of cycles required to hatch an egg of the Pokémon       |
+| damage_from\_**Type** | The damage multiplier when damaged by the move from a **Type**     |
+
+### The imagery features:
+
+| Feature Name         | Description                                                                       |
+|:------------------|:----------------------------------------------------|
+| size                 | The proportion of pixels occupied by the Pokémon's sprite                         |
+| perimeter            | The number of pixels occupied by the sprite's boundary                            |
+| perimeter_size_ratio | The ratio of the sprite's perimeter to its actual size                            |
+| **Value**\_mean      | The mean of the **Value** pixel value over the entire sprite                      |
+| **Value**\_sd        | The (population) standard deviation of the **Value** pixel over the entire sprite |
+| vertical overflow    | The amount by which the sprite touches the boundaries of the image vertically     |
+| horizontal overflow  | The amount by which the sprite touches the boundaries of the image horizontally   |
+
+\* (**Value** = **Red**, **Green**, **Blue**, **Brightness)**
+
+### The categorical features:
+
+Here's the table in RMarkdown format:
+
+| Column Name | Description                                                          |
+|------------------|------------------------------------------------------|
+| status      | Whether the Pokémon is normal / legendary / sub-legendary / mythical |
+| type_1      | The Primary Type of the Pokémon                                      |
+| type_2      | The Secondary Type of the Pokémon if it exists                       |
+| has_gender  | Whether the Pokémon has a gender                                     |
+
+# Previous Explorations
+
+```{r child = 'previous-works.md'}
+```
+
+# Methods
+
+## Nested Cross-Validation
+
+Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we are working with a small amount of data. To make the most of this, we use 5-fold nested cross validation so that every observation can take part in both the fitting and evaluation of models. Using a fixed set of folds, we perform hyperparameter tuning on 4 folds at a time and use the final model to make predictions on the remaining fold. Through this process, we obtain one predicted type for each observation, and use this to produce an accuracy score and a confusion matrix.
+
+## Hyperparameter Tuning
+
+In each outer fold of nested cross validation, we perform another inner 5-fold cross validation to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous, so it is impossible to exhaustively search all possible values. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})^2$.
+
+A simple approach is grid search, where each dimension of the continuous space is discretized into a small number of values. One then performs an exhaustive search for the combination of values that maximizes the 5-fold cross validation accuracy of a model fitted with those hyperparameters. For example, the parameter space of regularized logistic regression can be reduced to ${10^{-4}, 10^{-2}, 1, 10^2, 10^4}^2$, which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, it is possible that the true optimal parameters are not close to any of these values. Second, in higher-dimensional hyperparameter spaces, the number of points increases exponentially, forcing one to reduce the density of values in each dimension in order to keep the tuning process to a reasonable time. Even if fitting and evaluating a single model takes only 10 seconds, evaluating a grid of just 16 points over 5x5 nested cross validation repeats the process 400 times, taking over 1 hour.
+
+To better handle tuning in continuous hyperparameter spaces, we use Bayesian optimization (BayesOpt). Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy. Treating the samples as data, we fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space. BayesOpt chooses the next sample according to a balance of exploration and exploitation. For exploration, BayesOpt targets points in regions with high uncertainty to gather information. For exploitation, BayesOpt targets points in regions with high expected accuracy, to make incremental improvements. After some number of samples (50 in our case), BayesOpt reports the sample with the highest accuracy as the optimum. While it is not necessarily deterministic, it solves the problems faced by grid search. Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup. [@snoek2012practical]
+
+## Logistic Regression
+
+## SVM
+
+## Neural Network
+
+## Random Forest
+
+# Results
+
+# Discussion
+
+# References {#sec:ref}
+
+# Appendix
