@@ -11,24 +11,20 @@ _N_STATUS = 4
 
 
 def load_data(
-    hard_mode: bool = False,
     duplicate: bool = False,
+    hard_mode: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Load the dataset.
-
-    Apply normalization and one-hot encoding transformations.
+    """Load the dataset with normalization and one-hot encoding transformations.
 
     Args:
+        duplicate (bool): Whether to apply the duplication method. If so, move
+            type_2 from the predictors X to the target labels y.
         hard_mode (bool): Whether to exclude the against_from_* and type_2
             predictors, which make the classification task markedly easier.
-        duplicate (bool): Whether to apply the duplication method. If applied,
-            the duplicated data will be interwoven so that all duplicated
-            samples corresponding to the same original sample are together, but
-            they themselves will be in random order.
 
     Returns:
-        X: the predictors (encoded as floating point numbers)
-        y: the labels (encoded as strings)
+        X (ndarray): The predictors (encoded as floating point numbers)
+        y (ndarray): The labels (encoded as strings)
     """
     n_row = 1054
     n_col = 54

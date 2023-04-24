@@ -11,6 +11,17 @@ REGIONAL_PREFIXES = ["Galarian", "Alolan"]
 
 
 class Variant:
+    """The attributes of a single Pokemon variant.
+
+    Args:
+        pokemon_name (str): The name of the Pokemon.
+        variant_name (str | None): The name of the Pokemon's variation, or None
+            if the Pokemon only has one variation.
+        soup (BeautifulSoup): The web element containing all information about
+            the Pokemon variant.
+        sprite (Sprite): An image of the Pokemon variant.
+    """
+
     PROPERTIES = [
         "type_number",
         "type_1",
@@ -66,10 +77,6 @@ class Variant:
         "sprite_overflow_horizontal",
     ]
 
-    _POSITIONS = {
-        "Nor": (0, 0)
-    }
-
     def __init__(
         self,
         pokemon_name: str,
@@ -84,11 +91,7 @@ class Variant:
 
     @cached_property
     def full_name(self) -> str:
-        """Return the full name for a Pokemon
-
-        Return: 
-            str: Pokemon's full name
-        """
+        """The full name of the Pokemon."""
         if self.variant_name is None:
             return self.pokemon_name
         if self.pokemon_name in self.variant_name:
@@ -104,58 +107,34 @@ class Variant:
 
     @cached_property
     def pokedex_number(self) -> int:
-        """Return the index number of the Pokemon.
-
-        Return: 
-            str: The index number of the Pokemon.
-        """
+        """The index number of the Pokemon in the national Pokedex."""
         return parse_int(self._get_cell("National №"))
 
     @cached_property
     def type_number(self) -> int:
-        """Return the number of types the Pokemon possess.
-        
-        Return: 
-            int: The number of types the Pokemon possess.
-        """
+        """The number of types the Pokemon has (1 or 2)."""
         return len(self._get_cell("Type").find_all("a"))
 
     @cached_property
     def type_1(self) -> str:
-        """Return type 1 of Pokemon.
-        
-        Return: 
-            str: Type 1 of Pokemon.
-        """
+        """Type 1 of the Pokemon."""
         return parse_str(self._get_cell("Type").find_all("a")[0])
 
     @cached_property
     def type_2(self) -> str:
-        """Return type 2 of pokemon.
-        
-        Return: 
-            str: Type 2 of pokemon.
-        """
+        """Type 2 of the Pokemon."""
         if self.type_number >= 2:
             return parse_str(self._get_cell("Type").find_all("a")[1])
         return "None"
 
     @cached_property
     def height_m(self) -> float:
-        """Return height of Pokemon in meters.
-        
-        Return: 
-            float: Height of Pokemon in meters.
-        """
+        """The height of the Pokemon in metres."""
         return parse_float(self._get_cell("Height"))
 
     @cached_property
     def weight_kg(self) -> float | None:
-        """Return weight of Pokemon in meters.
-        
-        Return: 
-            float: Weight of Pokemon in meters.
-        """
+        """The weight of the Pokemon in kilograms."""
         cell = self._get_cell("Weight")
         if parse_str(cell) == "—":
             return None
@@ -163,23 +142,14 @@ class Variant:
 
     @cached_property
     def abilities_number(self) -> int:
-        """Return the number of abilities the Pokemon possess.
-        
-        Return: 
-            int: The number of abilities the Pokemon possess.
-        """
+        """The number of abilities the Pokemon has (0 to 3)."""
         return len(self._get_cell("Abilities").find_all("br"))
 
     @cached_property
     def total_points(self) -> int:
-        """Return the total number of points the Pokemon possess.
-        
-        Return the total number of points the Pokemon possess, 
-        which is the sum of its hp, attack, defence, sp_attack, 
-        sp_defence, and speed. 
-        
-        Return: 
-            int: The total number of points the Pokemon possess.
+        """The total number of combat points the Pokemon has.
+
+        Points include hp, attack, defence, sp_attack, sp_defence, and speed.
         """
         total = parse_int(self._get_cell("Total"))
         assert total == (
@@ -194,66 +164,37 @@ class Variant:
 
     @cached_property
     def hp(self) -> int:
-        """Return the number of hit points the Pokemon possess.
-
-        Return: 
-            int: The number of hit points the Pokemon possess.
-        """
+        """The number of hit points the Pokemon has."""
         return parse_int(self._get_cell("HP"))
 
     @cached_property
     def attack(self) -> int:
-        """Return the attack value of the Pokemon.
-
-        Return: 
-            int: The attack value the Pokemon possess.
-        """
+        """The attack value of the Pokemon."""
         return parse_int(self._get_cell("Attack"))
 
     @cached_property
     def defense(self) -> int:
-        """Return the defense value of the Pokemon.
-
-        Return: 
-            int: The defense value the Pokemon possess.
-        """
+        """The defense value of the Pokemon."""
         return parse_int(self._get_cell("Defense"))
 
     @cached_property
     def sp_attack(self) -> int:
-        """Return the special attack value of the Pokemon.
-
-        Return: 
-            int: The special attack value the Pokemon possess.
-        """
-        
+        """The special attack value of the Pokemon."""
         return parse_int(self._get_cell("Sp. Atk"))
 
     @cached_property
     def sp_defense(self) -> int:
-        """Return the special defense value of the Pokemon.
-
-        Return: 
-            int: The special defense value the Pokemon possess.
-        """
+        """The special defense value of the Pokemon."""
         return parse_int(self._get_cell("Sp. Def"))
 
     @cached_property
     def speed(self) -> int:
-        """Return the speed value of the Pokemon.
-
-        Return: 
-            int: The speed value the Pokemon possess.
-        """
+        """The speed value of the Pokemon."""
         return parse_int(self._get_cell("Speed"))
 
     @cached_property
     def catch_rate(self) -> int | None:
-        """Return the catch rate of the Pokemon in percentage.
-
-        Return: 
-            int: The catch rate of the Pokemon in percentage.
-        """
+        """The catch rate of the Pokemon."""
         cell = self._get_cell("Catch rate")
         if parse_str(cell) == "—":
             return None
@@ -261,11 +202,7 @@ class Variant:
 
     @cached_property
     def base_friendship(self) -> int:
-        """Return the base friendship value of the Pokemon.
-
-        Return: 
-            int: The base friendship value of the Pokemon.
-        """
+        """The base friendship value of the Pokemon."""
         cell = self._soup \
             .find("a", href="/glossary#def-friendship") \
             .find_parent("th") \
@@ -274,19 +211,14 @@ class Variant:
 
     @cached_property
     def base_experience(self) -> int:
-        """Return the base friendship value of the Pokemon.
-
-        Return: 
-            int: The base friendship value of the Pokemon.
-        """
+        """The base experience value of the Pokemon."""
         return parse_int(self._get_cell("Base Exp."))
 
     @cached_property
     def _growth_rate(self) -> str:
-        """Return the growth rate type of the Pokemon.
+        """The growth rate type of the Pokemon.
 
-        Return: 
-            str: The growth rate type of the Pokemon.
+        Either Erratic, Fast, Medium Fast, Medium Slow, Slow, or Fluctuating.
         """
         return parse_str(self._get_cell("Growth Rate"))
 
@@ -301,66 +233,45 @@ class Variant:
 
     @cached_property
     def maximum_experience(self) -> int:
-        """Return the experience value required by the Pokemon to achieve maximum level.
-
-        Return: 
-            int: The growth rate type of the Pokemon.
-        """
+        """The experience required by the Pokemon to achieve maximum level."""
         return self._MAX_EXP[self._growth_rate]
 
     @cached_property
     def egg_type_number(self) -> int:
-        """Return the number of egg types of the Pokemon.
-
-        Return: 
-            int: The number of egg types of the Pokemon.
-        """
+        """The number of egg types of the Pokemon."""
         return len(self._get_cell("Egg Groups").find_all("a"))
 
     @cached_property
     def has_gender(self) -> bool:
-        """Return whether the Pokemon has gender.
-
-        Return: 
-            bool: True if the Pokemon has gender, false otherwise.
-        """
+        """Whether the Pokemon has a gender."""
         cell = self._get_cell("Gender")
         s = parse_str(cell)
         return s not in ("Genderless", "—")
 
     @cached_property
     def proportion_male(self) -> float:
-        """Return the ratio of the Pokemon that are male in percentage.
-
-        Return: 
-            float: The ratio of the Pokemon that are male in percentage.
-        """
+        """The proportion of the Pokemon that are male (percentage, 0-100)."""
         cell = self._get_cell("Gender")
         s = parse_str(cell)
         return parse_percent(cell) / 100. if self.has_gender else 0.5
 
     @cached_property
     def egg_cycles(self) -> int:
-        """Return the number of step cycles required for the Pokemon's egg hatch.
-
-        Return: 
-            int: The number of step cycles required for the Pokemon's egg hatch.
-        """
+        """The number of step cycles required for the Pokemon's egg to hatch."""
         return parse_int(self._get_cell("Egg cycles"))
 
     def _get_damage_from(self, r: int, c: int) -> float:
-        """Return the damage received coefficient of the Pokemon. 
+        """The multiplier applied to damage of X type against the Pokemon.
 
-        Return the damage received coefficient of the Pokemon, 
-        when fighting against an enemy Pokemon of a specific type. 
+        Return the damage received coefficient of the Pokemon,
+        when fighting against an enemy Pokemon of a specific type.
 
-        Args: 
-            r (int): row number corresponds to the type of enemy the Pokemon.
-            c (int): column number corresponds to the type of enemy the Pokemon.
+        Args:
+            r (int): The row of type X in the PokemonDB damage chart.
+            c (int): The column of type X in the PokemonDB damage chart.
 
-        Return: 
-            float: The damage received coefficient of the Pokemon 
-                   when fighting against an enemy Pokemon of a specific type.
+        Return:
+            damage_from (float): The multiplier on damage of type X.
         """
         section = self._soup \
             .find("h2", string="Type defenses") \
@@ -457,78 +368,52 @@ class Variant:
 
     @cached_property
     def sprite_size(self) -> float:
-        """Return the sprite size of the Pokemon. 
+        """The size of the Pokemon's sprite.
 
-        Return the area size where the sprite of the pokemon covers.
-
-        Return: 
-            float: The sprite size of the Pokemon.
+        The size is defined as the proportion of non-transparent pixels in the
+        sprite.
         """
         return (self._sprite.alpha != 0).sum()
 
     @cached_property
     def sprite_perimeter(self) -> float:
-        """Return the sprite perimeter of the Pokemon. 
+        """The perimeter of the Pokemon's sprite.
 
-        Return the perimeter size which the sprite of the pokemon is contained.
-
-        Return: 
-            float: The sprite perimeter of the Pokemon.
+        The number of pixels in the sprite's perimeter.
         """
         return (self._sprite.perimeter).sum()
 
     @cached_property
     def sprite_perimeter_to_size_ratio(self) -> float:
-        """Return the ratio of sprite perimeter to size ratio of the Pokemon. 
+        """The ratio of the Pokemon's sprite's perimeter to its size.
 
-        Return: 
-            float: The ratio of sprite perimeter to size ratio of the Pokemon.
+        Roughly increases with the sprite's "spikiness".
         """
         return self.sprite_perimeter / self.sprite_size
 
     @cached_property
     def sprite_red_mean(self) -> float:
-        """Return the mean red color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The mean red color values of the sprite of Pokemon.
-        """
+        """The mean red color value of the Pokemon's sprite."""
         return (self._sprite.alpha * self._sprite.red).sum() / self.sprite_size
 
     @cached_property
     def sprite_green_mean(self) -> float:
-        """Return the mean green color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The mean green color values of the sprite of Pokemon.
-        """
+        """The mean green color value of the Pokemon's sprite."""
         return (self._sprite.alpha * self._sprite.green).sum() / self.sprite_size
 
     @cached_property
     def sprite_blue_mean(self) -> float:
-        """Return the mean blue color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The mean blue color values of the sprite of Pokemon.
-        """
+        """The mean blue color value of the Pokemon's sprite."""
         return (self._sprite.alpha * self._sprite.blue).sum() / self.sprite_size
 
     @cached_property
     def sprite_brightness_mean(self) -> float:
-        """Return the mean brightness of the sprite of Pokemon. 
-
-        Return: 
-            float: The mean brightness of the sprite of Pokemon.
-        """
+        """The mean red brightness value of the Pokemon's sprite."""
         return (self._sprite.alpha * self._sprite.brightness).sum() / self.sprite_size
 
     @cached_property
     def sprite_red_sd(self) -> float:
-        """Return the standard deviation red color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The standard deviation red color values of the sprite of Pokemon.
-        """
+        """The standard deviation in red color value of the Pokemon's sprite."""
         return sqrt(
             (self._sprite.alpha * (self._sprite.red - self.sprite_red_mean)**2).sum()
             / self.sprite_size
@@ -536,10 +421,7 @@ class Variant:
 
     @cached_property
     def sprite_green_sd(self) -> float:
-        """Return the standard deviation green color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The standard deviation green color values of the sprite of Pokemon.
+        """The standard deviation in green color value of the Pokemon's sprite.
         """
         return sqrt(
             (self._sprite.alpha * (self._sprite.green - self.sprite_green_mean)**2).sum()
@@ -548,10 +430,7 @@ class Variant:
 
     @cached_property
     def sprite_blue_sd(self) -> float:
-        """Return the standard deviation blue color values of the sprite of Pokemon. 
-
-        Return: 
-            float: The standard deviation blue color values of the sprite of Pokemon.
+        """The standard deviation in blue color value of the Pokemon's sprite.
         """
         return sqrt(
             (self._sprite.alpha * (self._sprite.blue - self.sprite_blue_mean)**2).sum()
@@ -560,11 +439,7 @@ class Variant:
 
     @cached_property
     def sprite_brightness_sd(self) -> float:
-        """Return the standard deviation brightness values of the sprite of Pokemon. 
-
-        Return: 
-            float: The standard deviation brightness values of the sprite of Pokemon.
-        """
+        """The standard deviation in brightness of the Pokemon's sprite."""
         return sqrt(
             (self._sprite.alpha * (self._sprite.brightness -
              self.sprite_brightness_mean)**2).sum()
@@ -573,28 +448,20 @@ class Variant:
 
     @cached_property
     def sprite_overflow_vertical(self) -> float:
-        """Return the amount of sprite of Pokemon touching the top/bottom edges. 
-
-        Return: 
-            float: The amount of sprite of Pokemon touching the top/bottom edges.
+        """The amount of the Pokemon touching the top/bottom edges of its
+        sprite.
         """
         return self._sprite.alpha[[0, -1], :].mean()
 
     @cached_property
     def sprite_overflow_horizontal(self) -> float:
-        """Return the amount of sprite of Pokemon touching the left/right edges. 
-
-        Return: 
-            float: The amount of sprite of Pokemon touching the left/right edges.
+        """The amount of the Pokemon touching the left/right edges of its
+        sprite.
         """
         return self._sprite.alpha[:, [0, -1]].mean()
 
     def as_dict(self) -> dict[str, int | str | None]:
-        """Return the attributes in variants as a dictionary. 
-
-        Return: 
-            dict[str, int | str | None]: The attributes in variants as a dictionary.
-        """
+        """The attributes of the variant as a dictionary."""
         return {
             attr: getattr(self, attr)
             for attr in Variant.PROPERTIES

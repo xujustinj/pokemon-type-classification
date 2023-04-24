@@ -29,7 +29,7 @@ def duplicate(X: np.ndarray, y: np.ndarray):
 
 
 def predict_multiset_indices(p: np.ndarray, cardinality: int):
-    """Converts a list of probabilities to indices of a multiset prediction.
+    """Convert a list of probabilities to indices of a multiset prediction.
 
     Repeatedly predicts the highest label and subtracts 1 from its probability.
 

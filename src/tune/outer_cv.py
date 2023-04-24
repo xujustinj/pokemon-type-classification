@@ -25,21 +25,25 @@ def outer_cv(
     n_folds_outer: int = 5,
     n_folds_inner: int = 5,
 ) -> float:
-    """Apply nested cross validation and find average cross validation accuracy.
-
-    Apply nested cross validation and find average cross validation accuracy
-    to one model type with hyperparamater tuning in inner folds.
+    """Find the nested cross validation accuracy of a model tuning process.
 
     Args:
-        tuner (Trainer[M]): The trainer for model type M
-        search (SearchSpace): The search space for hyperparameters
-        name (str): The name of the model
-        n_folds_outer (int): The number of outer folds
-        n_folds_inner (int): The number of inner folds
-        hard_mode (bool): False if including all columns, True if removing against and type 2 columns
+        tuner (Tuner[M]): A tuner that produces a model given a set of training
+            data via cross-validation.
+        search (SearchSpace): The search space for model hyperparameters used by
+            the tuner. The final model produced by the tuner is chosen from
+            within this space.
+        name (str): The name of the model.
+        duplicate (bool): Whether to apply the duplication technique to predict
+            both type_1 and type_2 together.
+        hard_mode (bool): Whether to remove the damage_from and type_2 features
+            from the predictors.
+        n_folds_outer (int): The number of outer cross-validation folds.
+        n_folds_inner (int): The number of inner cross-validation folds.
 
     Returns:
-        float: The outer fold average cross validation accuracy
+        accuracy (float): The average out-of-sample prediction accuracy across
+            all outer folds.
     """
     X, y = load_data(hard_mode=hard_mode, duplicate=duplicate)
     results: list[dict[str, Any]] = []

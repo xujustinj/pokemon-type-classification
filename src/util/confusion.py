@@ -22,13 +22,14 @@ def multiset_confusion(
     Args:
         y_true (ndarray): [N x M] true class labels.
         y_pred (ndarray): [N x M] predicted class labels.
-        labels (list[str]): All possible labels.
+        labels (list[str]): [K] All possible labels.
         normalize ("true" | "pred" | "all" | None): Normalizes the confusion
             matrix over the true class (rows), predicted class (columns), or
             the population. If None, the confusion matrix will not be
             normalized. "Normalizing" in this context means scaling such that
             the resulting sum is M (not 1). The reason for preferring M is so
             that the normalized entries may be interpreted as mean cardinality.
+
     Returns:
         cm (ndarray): [K x K] matrix where cm[i,j] is the count/proportion
             associated with true class i and predicted class j.
@@ -69,6 +70,19 @@ def confusion(
 
     For details, see sklearn's documentation of confusion_matrix, and
     multiset_confusion above.
+
+    Args:
+        y_true (ndarray): [N x M] true class labels.
+        y_pred (ndarray): [N x M] predicted class labels.
+        labels (list[str]): [K] All possible labels.
+        normalize ("true" | "pred" | "all" | None): Normalizes the confusion
+            matrix over the true class (rows), predicted class (columns), or
+            the population. If None, the confusion matrix will not be
+            normalized.
+
+    Returns:
+        cm (ndarray): [K x K] matrix where cm[i,j] is the count/proportion
+            associated with true class i and predicted class j.
     """
     if len(y_true.shape) == 1:
         return confusion_matrix(
@@ -87,7 +101,6 @@ def confusion(
         )
 
 
-
 def plot_confusion(
     y_true: np.ndarray,
     y_pred: np.ndarray,
@@ -96,10 +109,22 @@ def plot_confusion(
     name: str,
     path: str,
 ) -> None:
-    """Plot, display, and save a confusion matrix.
+    """Generate, plot, display, and save a confusion matrix.
 
     Args:
-        cm (ndarray): [K x K] confusion matrix.
+        y_true (ndarray): [N x M] true class labels.
+        y_pred (ndarray): [N x M] predicted class labels.
+        labels (list[str]): [K] All possible labels.
+        normalize ("true" | "pred" | "all" | None): Normalizes the confusion
+            matrix over the true class (rows), predicted class (columns), or
+            the population. If None, the confusion matrix will not be
+            normalized.
+        name (str): The name of the model that the confusion matrix is about.
+        path (str): The path to a local file to save an image of the plot.
+
+    Returns:
+        cm (ndarray): [K x K] matrix where cm[i,j] is the count/proportion
+            associated with true class i and predicted class j.
     """
     cm = confusion(
         y_true=y_true,
@@ -114,3 +139,4 @@ def plot_confusion(
     plt.title(f"Confusion Matrix for {name}")
     plt.savefig(path)
     plt.show()
+    return cm
