@@ -25,7 +25,7 @@ require(grid)
 require(gridExtra)
 require(ggplot2)
 require(png)
-df <- read.csv("scrape_from_scratch.csv")
+df <- read.csv("../data/scraped.csv")
 ```
 
 # Summary
@@ -92,13 +92,13 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 
 **Value** = **Red**, **Green**, **Blue**, **Brightness**
 
-```{r, echo=FALSE, fig.align = 'left', out.width='100px', fig.width=10, fig.height=10}
-knitr::include_graphics("pikachu.png")
+```{r, echo=FALSE, fig.align = 'center', fig.cap='Pikachu. generation: 1, status: Normal, type\\_number: 1, type\\_1: Electric, type\\_2: None, height\\_m: 0.4, speed: 90, catch\\_rate: 190, damage\\_from\\_water: 1, damage\\_from\\_ground: 2, sprite\\_red\\_sd: 0.414'}
+knitr::include_graphics("images/pikachu.png")
 ```
 
 # Previous Explorations
 
-```{r child = 'previous-works.md'}
+```{r child = 'tables/previous_works.md'}
 ```
 
 -   [@pokemondecisiontree]: Simple analysis of the pokemon dataset from generations 1-8. Trying to predict `type_1` using pokemon stats, generation number, as well as mythical/legendary status.
@@ -126,13 +126,39 @@ To address the issue, we use Bayesian optimization (BayesOpt).[@snoek2012practic
 
 To implement BayesOpt, we used `scikit-optimize`, which is only capable of tuning `scikit-learn` models. The neural network model is not implemented with `scikit-learn`, so it was tuned using random search. It is similar to BayesOpt in that it is nondeterministic, but random search chooses its samples entirely at random.
 
+## Duplication
+
+Pokemon type prediction can be treated as either a single-label classification task (`type_1`), or a multi-label classification task (`type_1` and `type_2`).
+In the multi-label case, a Pokemon's type can be treated as a multiset of cardinality 2.
+Pure Pokemon have a single type with multiplicity 2, while most Pokemon have two different types with multiplicity 1.
+
+To easily develop models for both tasks, we propose duplication, a technique to convert any single-label classifier that outputs class probabilities, into a fixed-cardinality label multiset classifier.
+Given a dataset $\mathcal{D} = \{ (x_i, \{ y_{i1}, y_{i2} \} ) \}_{i=1}^N$, we generate a new dataset $\mathcal{D}^\prime = \{ (x_i,y_{i1}), (x,y_{i2}) \}_{i=1}^N$ containing twice as many observations.
+We tune a single-label classifier on the $\mathcal{D}^\prime$.
+We then take this classifier and scale its predicted type probabilities by 2.
+The scaled probabilities represent the expected multiplicity of each label in $y_i$.
+Finally, to predict, we apply the following algorithm:
+
+1. $y_1 = \mathrm{argmax}_{y} p_y$ (predict $y_1$ as the type with highest probability)
+2. $p_{y_1} \leftarrow p_{y_1} - 1$ (subtract 1 from the probability of $y_1$)
+3. $y_2 = \mathrm{argmax}_{y} p_y$ (predict $y_2$ as the next type that maximizes the probability)
+
+For example, a Pokemon with the predicted probabilities (Water: 75%, Grass: 20%, Flying: 5%, rest: 0%) would be scaled to (Water: 1.5, Grass: 0.4, Flying: 0.1, rest: 0.0). Then, Water would be the first predicted class, after which the probability vector would be updated to (Water: 0.5, Grass: 0.4, Flying: 0.1, rest: 0.0). Since Water is still the highest class, it is predicted again (multiplicity 2).
+
+To demonstrate the method, we implemented duplication on all models that use `sklearn`: logistic regression, SVM, and random forest.
+We compare the models' performance at the duplication task alongside the normal prediction of `type_1` only.
+
 ## Logistic Regression
 
 We focused on multinomial logistic regression using `scikit-learn` package in Python. For multinomial logistic regression with $K \ge 2$ classes, we fit a single classifier with K outputs (one of them is 1), and take the softmax thereof. For regularization, ElasticNet encompasses both L1 and L2 penalties (and with a weak enough regularization term, no-penalty as well). We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength. Specifically, we utilize Bayesian Optimization to sample over the entire continuous space with ranges of the ratio of the L1 and L2 penalties and `C` being $[0.0, 1.0]\times [10^{-4}, 10^{4}]$.
 
-**TODO: selected hyperparameters** After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time. The coefficient `C` fluctuates between the ranges of $[0, 5]$ indicating stronger regularization. Overall, we obtain a model accuracy of $99.147\%$.
+After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that the L1 penalty (LASSO regularization) is chosen each time. The coefficient `C` fluctuates between the ranges of $[0, 5]$. Overall, we obtain a model accuracy of $99.147\%$. The high accuracy suggests that the data is linearly separable.
 
-We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space. We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization. The model performance decreased significantly where the overall prediction accuracy decreased to $36.903\%$. As a result, it would suggest that the `type_2` and `damage_from_{Type}` variables are very significant features in predicting Pokémon type.
+We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space. We observe that the ratio of the L1 and L2 penalties fluctuates in the range $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating weaker regularization. The model performance decreased significantly where the overall prediction accuracy decreased to $36.903\%$. As a result, it would suggest that the `type_2` and `damage_from_{Type}` variables are very significant features in predicting Pokémon type.
+
+We observe similar trends at the duplication task.
+That is, the majority of models choose to use solely the L1 penalty (LASSO regularization).
+When excluding `type_2` and `damage_from_{Type}`, the level of regularization also decreases.
 
 ## Support Vector Machines
 
@@ -143,6 +169,12 @@ There are two formulations of multiclass classification using SVMs: one-versus-r
 After hyperparameter tuning, we observe that in general, the best kernel was the RBF with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$. Overall, we obtain a model accuracy of $96.680\%$.
 
 Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{Type}` without changing the search space. We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively. After removing these features, the overall model accuracy falls to $46.583\%$.
+
+When investigating duplication, we find that the model tuning code does not terminate.
+The reason for this is [discussed in sklearn itself](https://github.com/scikit-learn/scikit-learn/issues/12738).
+When two points have exactly the same predictor values, their corresponding rows in the kernel matrix are identical.
+This makes the matrix singular, preventing optimization.
+Thus, we are unable to evaluate the duplication task for SVMs.
 
 ## Random Forests
 
@@ -177,15 +209,15 @@ Overall, every classifier performed extremely well (over 90% accuracy) when `typ
 However, the same does not hold when we train the model Without the `type_2` and `damage_from_{Type}` variables. The result from nested CV suggests a drastic decrease in prediction accuracy for all models.
 
 ```{r, out.width="60%", out.height="60%", echo = F, fig.align='center', fig.cap="Confusion Matrix on Test Data for Random Forest (SVM) Without type\\_2 and damage\\_from\\_\\{type\\} Features"}
-knitr::include_graphics("models/random_forest_hard/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/random_forest_hard/confusion_matrix_by_true.png")
 ```
 
-For instance, in the Confusion Matrix for Random Forest (Hard), we observed that the model was not able to predict any `Flying` type correctly and did extremely poorly for `Fairy` type. This is likely due to the small sample size of `Flying` and `Fairy` type Pokemon which has 8 and 19 samples respectively. Another interesting observation is that all models tend to make errors by falsely classifying the Pokemon as `Water` or `Bug` type. This is most obvious in random forest where most errors occurred in the `Water` column and might have to do with the relatively large `Water` type Pokemon population (136 `Water` type) and their generic attributes compared to the population. In contrast, `Dragon` and `Fire` type Pokemon has a relatively higher prediction accuracy across more models. We are certain that the high `Dragon` type prediction accuracy is because some of their particularly noticeable features: an extremely high `egg_cycles` and an extremely low `catch_rate` See Appendix [Dragon Pokemon Features](#dragon-pokemon-features)
-. As for the `Fire` type Pokemon, we did not find a particular feature that stands out could not explaining its high prediction accuracy. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Hard)](#confusion-matrix-for-logistic-regression-hard), [Confusion Matrix for Support Vector Machine (Hard)](#confusion-matrix-for-support-vector-machine-hard), [Confusion Matrix for Neural Network (Hard)](#confusion-matrix-for-neural-network-hard)
-
+For instance, in the Confusion Matrix for Random Forest (Hard), we observed that the model was not able to predict any `Flying` type correctly and did extremely poorly for `Fairy` type. This is likely due to the small sample size of `Flying` and `Fairy` type Pokemon which has 8 and 19 samples respectively. Another interesting observation is that all models tend to make errors by falsely classifying the Pokemon as `Water` or `Bug` type. This is most obvious in random forest where most errors occurred in the `Water` column and might have to do with the relatively large `Water` type Pokemon population (136 `Water` type) and their generic attributes compared to the population. In contrast, `Dragon` and `Fire` type Pokémon has a relatively higher prediction accuracy across more models. We are certain that the high `Dragon` type prediction accuracy is because some of their particularly noticeable features: an extremely high `egg_cycles` and an extremely low `catch_rate` See Appendix [Dragon Pokémon Features](#dragon-pokemon-features)
+. As for the `Fire` type Pokémon, we did not find a particular feature that stands out could not explaining its high prediction accuracy. See Appendix for Confusion Matrices [Confusion Matrix for Logistic Regression (Hard)](#confusion-matrix-for-logistic-regression-hard), [Confusion Matrix for Support Vector Machine (Hard)](#confusion-matrix-for-support-vector-machine-hard), [Confusion Matrix for Neural Network (Hard)](#confusion-matrix-for-neural-network-hard)
 
 
 ## Model Comparison
+
 | Model                             | Performance |
 |-----------------------------------|-------------|
 | Logistic Regression (base)        | 99.147%     |
@@ -194,26 +226,34 @@ For instance, in the Confusion Matrix for Random Forest (Hard), we observed that
 | Logistic Regression (dup/hard)    | 35.626%     |
 | Support Vector Machine (base)     | 96.680%     |
 | Support Vector Machine (hard)     | 46.583%     |
-| Support Vector Machine (dup/base) |             |
-| Support Vector Machine (dup/hard) |             |
+| Support Vector Machine (dup/base) | NA          |
+| Support Vector Machine (dup/hard) | NA          |
 | Random Forest (base)              | 96.491%     |
 | Random Forest (hard)              | 44.971%     |
 | Random Forest (dup/base)          | 99.763%     |
 | Random Forest (dup/hard)          | 39.945%     |
 | Neural Network (base)             | 99.318%     |
 | Neural Network (hard)             | 45.160%     |
+| Neural Network (dup/base)         | NA          |
+| Neural Network (dup/hard)         | NA          |
 
 -   base: with all features in the dataset
 -   hard: without type_2 and damage_from_{Type} features
 -   dup: with duplication method applied
 
-From the table, it is evident that using the base features the models returned by each method performed extremely well (over 90% accuracy) even with duplication applied. Whereas, once hard mode was applied, the accuracy dropped significantly regardless if the duplication method was applied or not, indicating that type_2 and damage_from_{Type} features add valuable information in predicting the Pokemon's type.
+From the table, it is evident that using the base features the models returned by each method performs extremely well (over 95% accuracy).
+Comparing `base` versus `dup/base`, logistic regression performs slightly worse with duplication applied, while random forests perform slightly better.
+However, the difference is only a few percent, which is not large compared to the fluctuations we experience in cross-validation accuracy.
+
+Whereas, once hard mode was applied, the accuracy dropped significantly regardless if the duplication method was applied or not, indicating that type_2 and damage_from_{Type} features add valuable information in predicting the Pokémon's type.
 
 We achieve the highest overall accuracy with random forest with the duplication method applied on all the features, and the lowest overall accuracy with logistic regression with the duplication method applied on hard mode.
 
-# Duplicated Data
+\newpage
 
-# Discussion
+# References {#sec:ref}
+
+<div id="refs"></div>
 
 \newpage
 
@@ -247,7 +287,7 @@ grid.arrange(p1,p2,ncol = 2)
 ## Dragon Pokemon Features
 
 ```{r, out.width="80%", out.height="80%", echo = F, fig.align='center',fig.cap="The noticable feature of Dragon type Pokemon (purple in colour)"}
-knitr::include_graphics("dragon.png")
+knitr::include_graphics("images/dragon.png")
 ```
 
 \newpage
@@ -255,7 +295,7 @@ knitr::include_graphics("dragon.png")
 ## Confusion Matrix for Logistic Regression (Base)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="Confusion Matrix on Test Data for Logistic Regression"}
-knitr::include_graphics("models/logistic_regression_base/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/logistic_regression_base/confusion_matrix_by_true.png")
 ```
 
 \newpage
@@ -263,7 +303,7 @@ knitr::include_graphics("models/logistic_regression_base/confusion_matrix_by_tru
 ## Confusion Matrix for Logistic Regression (Hard)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="Confusion Matrix on Test Data for Logistic Regression Without type\\_2 and damage\\_from\\_\\{type\\} Features"}
-knitr::include_graphics("models/logistic_regression_hard/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/logistic_regression_hard/confusion_matrix_by_true.png")
 ```
 
 \newpage
@@ -271,7 +311,7 @@ knitr::include_graphics("models/logistic_regression_hard/confusion_matrix_by_tru
 ## Confusion Matrix for Support Vector Machine (Base)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="Confusion Matrix on Test Data for Support Vector Machine (SVM) Without type\\_2 and damage\\_from\\_\\{type\\} Features"}
-knitr::include_graphics("models/support_vector_machine_base/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/support_vector_machine_base/confusion_matrix_by_true.png")
 ```
 
 \newpage
@@ -279,7 +319,7 @@ knitr::include_graphics("models/support_vector_machine_base/confusion_matrix_by_
 ## Confusion Matrix for Support Vector Machine (Hard)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="Confusion Matrix on Test Data for Support Vector Machine (SVM) Without type\\_2 and damage\\_from\\_\\{type\\} Features"}
-knitr::include_graphics("models/support_vector_machine_hard/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/support_vector_machine_hard/confusion_matrix_by_true.png")
 ```
 
 \newpage
@@ -287,7 +327,7 @@ knitr::include_graphics("models/support_vector_machine_hard/confusion_matrix_by_
 ## Confusion Matrix for Random Forest (Base)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="Confusion Matrix on Test Data for Random Forest (SVM)"}
-knitr::include_graphics("models/random_forest_base/confusion_matrix_by_true.png")
+knitr::include_graphics("../models/random_forest_base/confusion_matrix_by_true.png")
 ```
 
 \newpage
@@ -295,7 +335,7 @@ knitr::include_graphics("models/random_forest_base/confusion_matrix_by_true.png"
 ## Accuracy Heat map for Neural Network (Base)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="The accuracy heat map for Neural Network with different number of hidden layers and nodes per layer. 2 hidden layers with 250 nodes seem to work the best."}
-knitr::include_graphics('Stat 441 NN HM.png')
+knitr::include_graphics('images/Stat 441 NN HM.png')
 ```
 
 \newpage
@@ -303,7 +343,7 @@ knitr::include_graphics('Stat 441 NN HM.png')
 ## Confusion Matrix for Neural Network (Base)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="The confusion matrix for Neural Network"}
-knitr::include_graphics("Stat 441 NN CM.png")
+knitr::include_graphics("images/Stat 441 NN CM.png")
 ```
 
 \newpage
@@ -311,7 +351,7 @@ knitr::include_graphics("Stat 441 NN CM.png")
 ## Accuracy Heat map for Neural Network (Hard)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="The accuracy heat map for Neural Network with different number of hidden layers and nodes per layer Without type\\_2 and damage\\_from\\_\\{type\\} Features. 3 hidden layers with 1900 nodes seem to work the best"}
-knitr::include_graphics('Stat 441 NN HM without.png')
+knitr::include_graphics('images/Stat 441 NN HM without.png')
 ```
 
 \newpage
@@ -319,9 +359,15 @@ knitr::include_graphics('Stat 441 NN HM without.png')
 ## Confusion Matrix for Neural Network (Hard)
 
 ```{r, out.width="100%", out.height="100%", echo = F, fig.align='center',fig.cap="The accuracy heat map for Neural Network without type\\_2 and damage\\_from\\_\\{type\\} Features"}
-knitr::include_graphics("Stat 441 NN CM without.png")
+knitr::include_graphics("images/Stat 441 NN CM without.png")
 ```
 
 \newpage
-# References {#sec:ref}
 
+# Code
+
+```{r, child=c('converted_ipynb/logistic_regression.md', 'converted_ipynb/support_vector_machine.md', 'converted_ipynb/random_forest.md', 'converted_ipynb/neural_network_base.md', 'converted_ipynb/neural_network_hard.md')}
+```
+
+```{r, child=c('converted_py/model/__init__.md', 'converted_py/model/duplication.md', 'converted_py/model/model.md', 'converted_py/model/sk_model.md', 'converted_py/scrape/util/dict.md', 'converted_py/scrape/util/soup.md', 'converted_py/scrape/util/sprite.md', 'converted_py/scrape/__init__.md', 'converted_py/scrape/scrape.md', 'converted_py/scrape/variant.md', 'converted_py/tune/__init__.md', 'converted_py/tune/dimension.md', 'converted_py/tune/outer_cv.md', 'converted_py/tune/sk_bayes.md', 'converted_py/tune/tuner.md', 'converted_py/util/__init__.md', 'converted_py/util/accuracy.md', 'converted_py/util/confusion.md', 'converted_py/util/duplication.md', 'converted_py/util/parallel.md')}
+```
