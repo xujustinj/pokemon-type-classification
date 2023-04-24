@@ -15,7 +15,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 require(tidyverse)
-require(tinytex)
+require()
 ```
 
 # Introduction
@@ -33,18 +33,18 @@ Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pok
 **Categorical features**:
 
 | Column Name | Description                                                          |
-|--------------------|----------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | status      | Whether the Pokémon is normal / legendary / sub-legendary / mythical |
 | type_1      | The Primary Type of the Pokémon                                      |
 | type_2      | The Secondary Type of the Pokémon if it exists                       |
 | has_gender  | Whether the Pokémon has a gender                                     |
 
-The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, Ghost, Grass, Ground, Ice, Normal, Poison, Psychic, Rock, Steel, Water \newpage 
+The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, Ghost, Grass, Ground, Ice, Normal, Poison, Psychic, Rock, Steel, Water \newpage
 
 **Numerical features**:
 
 | Feature Name          | Description                                                        |
-|:---------------------|:-------------------------------------------------|
+|:----------------------|:------------------------------------------------|
 | generation            | The chronological divisions of Pokémon, from 1st generation to 8th |
 | type_number           | The number of types the Pokémon belong to, either 1 or 2           |
 | height_m              | The height of the Pokémon in meters                                |
@@ -66,10 +66,10 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 | egg_cycles            | The number of cycles required to hatch an egg of the Pokémon       |
 | damage_from\_**Type** | The damage multiplier when damaged by the move from a **Type**     |
 
-**Imagery features**:
+**Imagery features (numerical)**:
 
 | Feature Name         | Description                                                                     |
-|:--------------------|:--------------------------------------------------|
+|:---------------------|:-------------------------------------------------|
 | size                 | The proportion of pixels occupied by the Pokémon's sprite                       |
 | perimeter            | The number of pixels occupied by the sprite's boundary                          |
 | perimeter_size_ratio | The ratio of the sprite's perimeter to its actual size                          |
@@ -82,10 +82,10 @@ The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, G
 
 # Previous Explorations
 
-#```{r child = 'previous-works.md'}
-#```
+```{r child = 'previous-works.md'}
+```
 
-# Methods
+# Methods and Results
 
 ## Nested Cross-Validation
 
@@ -93,40 +93,39 @@ Acknowledging that the average `type_1` category has fewer than 60 Pokemon, we a
 
 ## Hyperparameter Tuning
 
-In each outer fold of nested cross validation, we perform another inner 5-fold cross validation to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous, so it is impossible to exhaustively search all possible values. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})^2$.
+In each outer fold of nested cross validation, we perform another inner 5-fold CV (cross validation) to select the best hyperparameters for the given model. However, for most models, the hyperparameter space is continuous and makes exhaustive search impossible. For example, regularized logistic regression admits a two-dimensional parameter space: $(0,{\infty})\times (0,{\infty})$.
 
-A simple approach is grid search, where each dimension of the continuous space is discretized into a small number of values. One then performs an exhaustive search for the combination of values that maximizes the 5-fold cross validation accuracy of a model fitted with those hyperparameters. For example, the parameter space of regularized logistic regression can be reduced to ${10^{-4}, 10^{-2}, 1, 10^2, 10^4}^2$, which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, it is possible that the true optimal parameters are not close to any of these values. Second, in higher-dimensional hyperparameter spaces, the number of points increases exponentially, forcing one to reduce the density of values in each dimension in order to keep the tuning process to a reasonable time. Even if fitting and evaluating a single model takes only 10 seconds, evaluating a grid of just 16 points over 5x5 nested cross validation repeats the process 400 times, taking over 1 hour.
+In the early attempt, we tried grid search where we discretize the continuous search space and perform exhaustive search over the combination of hyperparameters in the search space. We then extract the hyperparameters that optimizes the model in a 5-fold CV and treat it as the optimal hyperparameters. For instance, we can reduce the search space of regularized logistic regression into $\{10^{-4}, 10^{-2}, 1, 10^2, 10^4\} \times \{10^{-4}, 10^{-2}, 1, 10^2, 10^4\}$ which contains $5^2 = 25$ points. However, there are two major drawbacks to this method. First, the hyperparameters in the discretized search space may be far from the true optimal parameters and second, the number of models needed to fit with a higher-dimensional hyperparameter spaces increases exponentially. This forces one to reduce the density of values in each dimension in order to keep the tuning process manageable.
 
-To better handle tuning in continuous hyperparameter spaces, we use Bayesian optimization (BayesOpt). Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy. Treating the samples as data, we fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space. BayesOpt chooses the next sample according to a balance of exploration and exploitation. For exploration, BayesOpt targets points in regions with high uncertainty to gather information. For exploitation, BayesOpt targets points in regions with high expected accuracy, to make incremental improvements. After some number of samples (50 in our case), BayesOpt reports the sample with the highest accuracy as the optimum. While it is not necessarily deterministic, it solves the problems faced by grid search. Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup. [@snoek2012practical]
+To address the issue, we use Bayesian optimization (BayesOpt). Instead of a fixed set of values, we sample one point at a time from the parameter space, and evaluate the corresponding model's cross validation accuracy. We then treat the samples as data and fit a Gaussian process regression model to estimate the cross validation accuracy as a probabilistic function of the parameter space. In doing so, BayesOpt chooses the next sample according to a balance of exploration and exploitation. For exploration, BayesOpt targets points in regions with high uncertainty to gather information. For exploitation, BayesOpt targets points in regions with high expected accuracy to make incremental improvements. After some number of samples (50 in our case), BayesOpt reports the sample with the highest accuracy as the optimum. While it is not necessarily deterministic, it solves the problems faced by grid search. Namely, the optimum is not restricted to a predetermined set of points, and the algorithm adapts to any number of dimensions without forced exponential blowup. [@snoek2012practical]
 
 ## Logistic Regression
 
-For logistic regression we chose to focus on multinomial logistic regression, which is the default used by the Scikit-Learn package in Python. For multinomial logistic regression with K > 2 classes, we fit a single classifier with K outputs (one of them is 1), and take the softmax thereof. For regularization, ElasticNet encompasses both L1 and L2 penalties (and with  a weak enough regularization term, no-penalty as well). We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength. Specifically, we utilize Bayesian Optimization to sample over the entire continuous space with the ranges of the ratio of the L1 and L2 penalties and `C` being [0.0, 1.0] and [1e-4, 1e4] respectively. 
+In Logistic Regression, we focused on multinomial logistic regression and used the Scikit-Learn package in Python. For multinomial logistic regression with $K \ge 2$ classes, we fit a single classifier with K outputs (one of them is 1), and take the softmax thereof. For regularization, ElasticNet encompasses both L1 and L2 penalties (and with a weak enough regularization term, no-penalty as well). We thus parameterize the search space of potential hyperparameters by the ratio of the L1 and L2 penalties, and the coefficient `C` representing the inverse of regularization strength. Specifically, we utilize Bayesian Optimization to sample over the entire continuous space with ranges of the ratio of the L1 and L2 penalties and `C` being $[0.0, 1.0]\times [1e-4, 1e4]$ .
 
-After applying Bayesian Optimization and nested cross-validation with k = 5 folds, we observe that the ratio of the L1 and L2 penalties is constant at 1.0 which indicates that lasso regularization or L1 penalty is chosen each time. The coefficient `C` fluctuates between the ranges of [0, 5] indicating stronger regularization.  Overall, we obtain a model accuracy of 96.302%. 
+After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time. The coefficient `C` fluctuates between the ranges of $[0, 5]$ indicating stronger regularization. Overall, we obtain a model accuracy of $96.302\%$.
 
-Next we also investigate the strength of  the model without the features `type_2` and the `damage_from_{TYPE}`, with the same search space as before we observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of [0.4, 1]. The coefficient `C` also fluctuates between [3.5, 10], again indicating a stronger regularization. After removing the features, we obtain an overall model accuracy of 36.903%. As a result, it would suggest that the `type_2` and `damage_from_{TYPE}` variables are very significant features in predicting Pokemon type. 
+We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space. We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization. The model performance decreased significantly where the overall prediction accuracy decreased to $36.903%$. As a result, it would suggest that the `type_2` and `damage_from_{TYPE}` variables are very significant features in predicting Pokemon type.
 
-## SVM
+## SVM (Support Vector Machine)
 
-We trained SVM models with the Scikit-Learn package in Python. The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel),  and whether to use probability output. For tuning, we consider the linear, polynomial, and radial basis function kernels. The sigmoid kernel is never guaranteed to be positive semi-definite so we avoid using it. Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel. Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between [2, 5], [1e-4, 1e4], [1e-3, 1e3], and [0.0, 1.0] respectively for the polynomial kernel. For the radial basis function kernel, the search space is `C` and `gamma` ranging between [1e-4, 1e4] and [1e-3, 1e3] respectively.
+We trained SVM models with the Scikit-Learn package in Python. The hyperparameters we tested are the regularization parameter `C`, the `kernel` type, the `degree` of the polynomial if the kernel is polynomial, the kernel coefficient `gamma`, an independent term in the kernel function `coef0` (only significant for a polynomial/sigmoid kernel), and whether to use probability output. For tuning, we consider the linear, polynomial, and radial basis function kernels. The sigmoid kernel is never guaranteed to be positive semi-definite and therefore, avoided. Moreover, the linear kernel is just a special case of the polynomial kernel (with `degree` = 1, `gamma` = 1, `coef0` = 0), allowing us to specify it together with the polynomial kernel. Thus the hyperparameter search space is presented as `degree`, `C`, `gamma`, and `coef0` ranging between $[2, 5]\times[10^{-4}, 10^{4}]\times[10^{-3}, 10^{3}]\times[0.0, 1.0]$ for the polynomial kernel. For the radial basis function kernel, the search space is `C` and `gamma` ranging between $[10^{-4}, 10^{4}] \times [10^{-3}, 10^{3}]$ respectively.
 
-We decided that for the decision_function_shape, it makes the most sense to use one-versus-rest (OVR) rather than one-versus-one (OVO). This is because there are 18 classes in the data set, and OVR will significantly reduce the complexity of SVM by only having 18 models, whereas OVO will create 18 *  17 models which would increase the model complexity, training time, and the likelihood of overfitting. 
+We decided that for the decision_function_shape, it makes the most sense to use one-versus-rest (OVR) rather than one-versus-one (OVO). This is because there are $18$ classes in the data set, and OVR will significantly reduce the complexity of SVM by only having 18 models, whereas OVO will create $18 \times 17 = 306$ models which would increase the model complexity, training time, and the risk of overfitting.
 
-After applying Bayesian Optimization and nested cross-validation with k = 5 folds, we observe that in general, the best kernel was radial basis function with the regularization parameter `C` fluctuating from 33 to 10,000 where `C` is inversely proportional to the strength of regularization and `gamma` was between [0.002, 0.036]. Overall, we obtain a model accuracy  of 96.868%.
+After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that in general, the best kernel was radial basis function with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$. Overall, we obtain a model accuracy of $96.868\%$.
 
-Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}`, with the same search space as before. We observe that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from [18, 867] and [0.15, 0.27] respectively. After removing these features, the overall model accuracy falls to 46.206%. 
+Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}` without changing the search space. We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively. After removing these features, the overall model accuracy falls to $46.206%$.
 
-## Neural Network
+## NN Neural Network
 
 We use PyTorch and the scikit-learn package to train the Neural Network where we optimize the following hyperparameters: number of hidden layers, layer size, dropout rate, number of epochs and batch size.
 
-The hyperparameter optimization for Neural Networks is challenging due to its time consuming training process and an enormous search space. In addition, we use randomly sampled batches to update weights and biases. As a result, the trained model contains a considerable amount of randomness and will impact our judgment on the actual performance of the model. To accommodate these issues, we  use the greedy algorithm approach to optimize the hyperparameters. First, we optimize the number of hidden layers and nodes per layer, then, we adjust the dropout rate, number of epochs and batch size in search of the best model. Note for simplicity and computation feasibility, we assume a constant number of nodes for each hidden layer. To resolve the randomness during the training process, we simply compute the average CV losses over multiple iterations which, in theory, leads to a more robust estimate of the model performance. In the end, we will choose the set of  hyperparameter sets  that yields the lowest average CV losses and use them in the nested CV to examine the fitting power of Neural Networks. 
+The hyperparameter optimization for Neural Networks is challenging due to its time consuming training process and an enormous search space. In addition, we use randomly sampled batches to update weights and biases. As a result, the trained model contains a considerable amount of randomness and will impact our judgment on the actual performance of the model. To accommodate these issues, we use the greedy algorithm approach to optimize the hyperparameters. First, we optimize the number of hidden layers and nodes per layer, then, we adjust the dropout rate, number of epochs and batch size in search of the best model. Note for simplicity and computation feasibility, we assume a constant number of nodes for each hidden layer. To resolve the randomness during the training process, we simply compute the average CV losses over multiple iterations which, in theory, leads to a more robust estimate of the model performance. In the end, we will choose the set of hyperparameter sets that yields the lowest average CV losses and use them in the nested CV to examine the fitting power of Neural Networks.
 
-The nested CV result of Neural Networks is very good. With the best setup, it is capable of reaching a prediction accuracy of 99% percent and in some test cases, the prediction power reached 100% accuracy. 
+The nested CV result of Neural Networks is very good. With the best setup, it is capable of reaching a prediction accuracy of 99% percent and in some test cases, the prediction power reached 100% accuracy.
 
-The nested CV result of Neural Networks without type2 and damage_from variable is around 45%. Note that the outer CV result varies greatly from 40.8% to 49.8%.  This suggests the performance of the Neural Network is not very stable and a potential cause of this instability is the batch randomness. However, further investigation is needed to draw conclusion.
-
+The nested CV result of Neural Networks without type2 and damage_from variable is around 45%. Note that the outer CV result varies greatly from 40.8% to 49.8%. This suggests the performance of the Neural Network is not very stable and a potential cause of this instability is the batch randomness. However, further investigation is needed to draw conclusion.
 
 ## Random Forest
 
@@ -134,7 +133,7 @@ For random forest, we utilized the Scikit-Learn package in python. The search sp
 
 After applying Bayesian Optimization and nested cross-validation with k = 5 folds, we observe that in general the `gini` index criterion was preferred while the `max_depth` and `max_features` fluctuate between [10, 38] and [35, 74] respectively. Overall, we obtain a model accuracy of 96.491%.
 
-Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}`, with the same search space as before.  We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between [13, 37] and [3, 37] respectively. Overall, we obtain a model accuracy of 44.971% after removing these features.
+Next we also investigate the strength of the model without the features `type_2` and the `damage_from_{TYPE}`, with the same search space as before. We observe that the `gini` index criterion was still preferred while the `max_depth` and `max_features` fluctuate between [13, 37] and [3, 37] respectively. Overall, we obtain a model accuracy of 44.971% after removing these features.
 
 # Results
 
