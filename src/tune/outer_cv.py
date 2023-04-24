@@ -18,16 +18,6 @@ M = TypeVar("M", bound=Model)
 BASE_MODEL_DIR = "../models/"
 
 
-# MULTIPROCESSING
-
-_CPUS = len(os.sched_getaffinity(0))
-# use one fewer core to avoid hogging all resources
-_PARALLELISM = max(_CPUS - 1, 1)
-
-_log = mp.log_to_stderr()
-_log.setLevel(logging.INFO)
-
-
 def _outer_cv_fold(
     tuner: Tuner[M],
     search: SearchSpace,

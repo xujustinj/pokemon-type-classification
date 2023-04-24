@@ -1,11 +1,11 @@
-import os
 from typing import Any, Type
 
 import numpy as np
 from sklearn.base import BaseEstimator
 from skopt import BayesSearchCV
 
-from model import SKModel, Config, wrap_sklearn_classifier_via_duplication
+from model import SKModel, wrap_sklearn_classifier_via_duplication
+from util import PARALLELISM
 from .tuner import Tuner, SearchSpace, Splitter
 
 
@@ -33,10 +33,6 @@ class SKBayesTuner(Tuner[SKModel]):
             )
         self._estimator = Classifier()
 
-        # use one fewer core to avoid hogging all resources
-        self._cores = max(len(os.sched_getaffinity(0)) - 1, 1)
-        print(f"Using {self._cores} core(s)")
-
     def tune(
         self,
         X_train: np.ndarray,
@@ -61,7 +57,7 @@ class SKBayesTuner(Tuner[SKModel]):
             estimator=self._estimator,
             search_spaces=search,
             cv=split,
-            n_jobs=self._cores,
+            n_jobs=PARALLELISM,
         )
         opt.fit(X_train, y_train)
 
