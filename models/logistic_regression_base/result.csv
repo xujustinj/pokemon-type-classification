@@ -1,0 +1,6 @@
+,C,l1_ratio,max_iter,multi_class,penalty,random_state,solver,warm_start,accuracy
+0,33.612861473692924,0.99409317253617,9001,multinomial,elasticnet,441,saga,True,0.985781990521327
+1,30.973684139788745,1.0,9001,multinomial,elasticnet,441,saga,True,1.0
+2,353.68442988741356,1.0,9001,multinomial,elasticnet,441,saga,True,0.981042654028436
+3,239.9574767742722,1.0,9001,multinomial,elasticnet,441,saga,True,0.990521327014218
+4,135.6287499526515,1.0,9001,multinomial,elasticnet,441,saga,True,1.0

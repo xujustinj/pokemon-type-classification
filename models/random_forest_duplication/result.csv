@@ -1,0 +1,6 @@
+,criterion,max_depth,max_features,min_samples_split,n_estimators,random_state,accuracy
+0,gini,13,7,3,441,441,0.990521327014218
+1,log_loss,24,12,3,441,441,0.9976303317535545
+2,gini,37,6,3,441,441,1.0
+3,gini,45,7,3,441,441,1.0
+4,log_loss,13,9,3,441,441,1.0
