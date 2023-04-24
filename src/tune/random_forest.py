@@ -10,7 +10,7 @@ from .tuner import Tuner, SearchSpace, Splitter
 
 class RandomForestBayesTuner(Tuner[RandomForestModel]):
     """
-    Optimizes logistic regression through Bayesian optimization.
+    Optimizes random forest through Bayesian optimization.
     """
     def tune(
         self,
@@ -19,6 +19,20 @@ class RandomForestBayesTuner(Tuner[RandomForestModel]):
         search: SearchSpace,
         split: Splitter,
     ) -> RandomForestModel:
+        """Tune hyperparameters of random forest models.
+
+        Tune the model hyperparameters for random forest models 
+        given the X-values and y-values of the training data. 
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            search (SearchSpace): The search space for hyperparameters
+            split (Splitter): A cross validation generator
+
+        Returns:
+            RandomForestModel: The trained random forest model
+        """
         opt = BayesSearchCV(
             estimator=RandomForestClassifier(
                 random_state=441,

@@ -19,6 +19,20 @@ class LogisticRegressionBayesTuner(Tuner[LogisticRegressionModel]):
         search: SearchSpace,
         split: Splitter,
     ) -> LogisticRegressionModel:
+        """Tune hyperparameters of logistic regression models.
+
+        Tune the model hyperparameters for logistic regression models 
+        given the X-values and y-values of the training data. 
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            search (SearchSpace): The search space for hyperparameters
+            split (Splitter): A cross validation generator
+
+        Returns:
+            LogisticRegressionModel: The trained logistic regression model
+        """
         opt = BayesSearchCV(
             estimator=LogisticRegression(
                 multi_class="multinomial",

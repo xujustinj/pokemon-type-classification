@@ -40,6 +40,27 @@ def _outer_cv_fold(
     train_ids: np.ndarray,
     test_ids: np.ndarray,
 ) -> tuple[M, float, np.ndarray]:
+    """Apply nested cross validation and find average cross validation accuracy. 
+
+    Apply nested cross validation and find average cross validation accuracy 
+    to one model type with hyperparamater tuning in inner folds. 
+
+    Args:
+        tuner (Trainer[M]): The trainer for model type M
+        search (SearchSpace): The search space for hyperparameters
+        n_folds_inner (int): The number of inner folds
+        model_dir (str): The path to save trained models
+        X (np.ndarray): The X-values of the data
+        y (np.ndarray): The y-values of the data
+        id (int): The index of the outer fold and trained model
+        train_ids (np.ndarray): The indices of training data
+        test_ids (np.ndarray): The indices of testing data
+
+    Returns:
+        tuple[M, float, np.ndarray]: tuple containing trained model of type M, 
+                                     testing accuracy of the model in this fold, 
+                                     and the prediction result on test set
+    """
     model_path = os.path.join(model_dir, f"cv-{id}.mdl")
 
     if os.path.exists(model_path):
@@ -89,6 +110,23 @@ def outer_cv(
     n_jobs: int = 1,
     hard_mode: bool = False,
 ) -> float:
+    """Apply nested cross validation and find average cross validation accuracy. 
+
+    Apply nested cross validation and find average cross validation accuracy 
+    to one model type with hyperparamater tuning in inner folds. 
+
+    Args:
+        tuner (Trainer[M]): The trainer for model type M
+        search (SearchSpace): The search space for hyperparameters
+        name (str): The name of the model
+        n_folds_outer (int): The number of outer folds
+        n_folds_inner (int): The number of inner folds
+        n_jobs (int): The number of jobs to run for multiprocessing
+        hard_mode (bool): False if including all columns, True if removing against and type 2 columns
+
+    Returns:
+        float: The outer fold average cross validation accuracy
+    """
     duplicate = isinstance(tuner, DuplicationTuner)
 
     n_jobs = min(n_jobs, n_folds_outer)  # cannot exceed one job per outer fold

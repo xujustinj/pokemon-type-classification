@@ -27,6 +27,20 @@ class DuplicationTuner(Tuner[DuplicationModel]):
         search: SearchSpace,
         split: Splitter,
     ) -> DuplicationModel:
+        """Tune hyperparameters of duplication models.
+
+        Tune the model hyperparameters for duplication models 
+        given the X-values and y-values of the training data. 
+
+        Args:
+            X_train (np.ndarray): X-values of training data
+            y_train (np.ndarray): y-values of training data
+            search (SearchSpace): The search space for hyperparameters
+            split (Splitter): A cross validation generator
+
+        Returns:
+            DuplicationModel: The trained duplication model
+        """
         _, M = y_train.shape
 
         # index M*i+j corresponds to the jth label of the ith example
