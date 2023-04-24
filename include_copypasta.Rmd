@@ -1,0 +1,2 @@
+```{r, child=c('rmd/converted_ipynb/logistic_regression.md', 'rmd/converted_ipynb/support_vector_machine.md', 'rmd/converted_ipynb/random_forest.md', 'rmd/converted_ipynb/neural_network_base.md', 'rmd/converted_ipynb/neural_network_hard.md')}
+```
