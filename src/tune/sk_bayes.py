@@ -1,15 +1,15 @@
-from typing import Any, Type
+from typing import Any, Generic
 
 import numpy as np
 from sklearn.base import BaseEstimator
 from skopt import BayesSearchCV
 
-from model import SKModel, wrap_sklearn_classifier_via_duplication
+from model import SKClassifier, SKModel
 from util import PARALLELISM
 from .tuner import Tuner, SearchSpace, Splitter
 
 
-class SKBayesTuner(Tuner[SKModel]):
+class SKBayesTuner(Tuner[SKModel], Generic[SKClassifier]):
     """Optimizes an sklearn classifier through Bayesian optimization.
 
     Args:
@@ -20,18 +20,8 @@ class SKBayesTuner(Tuner[SKModel]):
         num_labels (int): If duplicate=True, the number of labels that the
             multiset classifier should predict.
     """
-    def __init__(
-        self,
-        Classifier: Type[BaseEstimator],
-        duplicate: bool = False,
-        num_labels: int = 2,
-    ):
-        if duplicate:
-            Classifier = wrap_sklearn_classifier_via_duplication(
-                Classifier=Classifier,
-                num_labels=num_labels
-            )
-        self._estimator = Classifier()
+    def __init__(self, estimator: SKClassifier):
+        self._estimator = estimator
 
     def tune(
         self,

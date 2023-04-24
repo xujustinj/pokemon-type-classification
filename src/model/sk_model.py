@@ -1,20 +1,26 @@
+from typing import Generic, TypeVar
+
 import numpy as np
 from sklearn.base import BaseEstimator
+from sklearn.ensemble import RandomForestClassifier as SKRandomForest
+from sklearn.linear_model import LogisticRegression as SKLogisticRegression
+from sklearn.svm import SVC as SKSupportVectorMachine
 
 from .model import Model, Config
 
+SKClassifier = TypeVar("SKClassifier", bound=BaseEstimator)
 
-class SKModel(Model):
+class SKModel(Model, Generic[SKClassifier]):
     """Wrapper for an sklearn model.
 
     Args:
-        model (BaseEstimator): An sklearn classification model. Must support
+        model (SKClassifier): An sklearn classification model. Must support
             predict() and predict_proba() methods. e.g.: LogisticRegression
         config (Config): The hyperparameters of the model.
     """
 
-    def __init__(self, model: BaseEstimator, config: Config):
-        assert isinstance(model, BaseEstimator)
+    def __init__(self, model: SKClassifier, config: Config):
+        assert isinstance(model, SKClassifier)
 
         super().__init__(config)
         self._model = model
