@@ -30,10 +30,21 @@ Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pok
 
 ## Feature introduction:
 
-### The numerical features:
+**Categorical features**:
+
+| Column Name | Description                                                          |
+|--------------------|----------------------------------------------------|
+| status      | Whether the Pokémon is normal / legendary / sub-legendary / mythical |
+| type_1      | The Primary Type of the Pokémon                                      |
+| type_2      | The Secondary Type of the Pokémon if it exists                       |
+| has_gender  | Whether the Pokémon has a gender                                     |
+
+The types include: Bug, Dark, Dragon, Electric, Fairy, Fighting, Fire, Flying, Ghost, Grass, Ground, Ice, Normal, Poison, Psychic, Rock, Steel, Water \newpage 
+
+**Numerical features**:
 
 | Feature Name          | Description                                                        |
-|:-------------------|:---------------------------------------------------|
+|:---------------------|:-------------------------------------------------|
 | generation            | The chronological divisions of Pokémon, from 1st generation to 8th |
 | type_number           | The number of types the Pokémon belong to, either 1 or 2           |
 | height_m              | The height of the Pokémon in meters                                |
@@ -47,7 +58,7 @@ Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pok
 | sp_defense            | The base special defense of the Pokémon                            |
 | speed                 | The base speed of the Pokémon                                      |
 | catch_rate            | Catch rate of the Pokémon                                          |
-| base_friendship       | The base friendship of the Pokémon                                 |
+| base_friendship       | The base friendship of the Poké mon                                |
 | base_experience       | The base experience of a wild Pokémon when caught                  |
 | maximum_experience    | The experience needed for the Pokémon to reach the maximum level   |
 | egg_type_number       | The number of egg groups the Pokémon egg belongs to                |
@@ -55,30 +66,19 @@ Using [Pokédex Dataset](https://www.kaggle.com/datasets/mariotormo/complete-pok
 | egg_cycles            | The number of cycles required to hatch an egg of the Pokémon       |
 | damage_from\_**Type** | The damage multiplier when damaged by the move from a **Type**     |
 
-### The imagery features:
+**Imagery features**:
 
-| Feature Name         | Description                                                                       |
-|:------------------|:----------------------------------------------------|
-| size                 | The proportion of pixels occupied by the Pokémon's sprite                         |
-| perimeter            | The number of pixels occupied by the sprite's boundary                            |
-| perimeter_size_ratio | The ratio of the sprite's perimeter to its actual size                            |
-| **Value**\_mean      | The mean of the **Value** pixel value over the entire sprite                      |
-| **Value**\_sd        | The (population) standard deviation of the **Value** pixel over the entire sprite |
-| vertical overflow    | The amount by which the sprite touches the boundaries of the image vertically     |
-| horizontal overflow  | The amount by which the sprite touches the boundaries of the image horizontally   |
+| Feature Name         | Description                                                                     |
+|:--------------------|:--------------------------------------------------|
+| size                 | The proportion of pixels occupied by the Pokémon's sprite                       |
+| perimeter            | The number of pixels occupied by the sprite's boundary                          |
+| perimeter_size_ratio | The ratio of the sprite's perimeter to its actual size                          |
+| **Value**\_mean      | The mean of the **Value** pixel value over the entire sprite                    |
+| **Value**\_sd        | The standard deviation of the **Value** pixel over the entire sprite            |
+| vertical overflow    | The amount by which the sprite touches the boundaries of the image vertically   |
+| horizontal overflow  | The amount by which the sprite touches the boundaries of the image horizontally |
 
-\* (**Value** = **Red**, **Green**, **Blue**, **Brightness)**
-
-### The categorical features:
-
-Here's the table in RMarkdown format:
-
-| Column Name | Description                                                          |
-|------------------|------------------------------------------------------|
-| status      | Whether the Pokémon is normal / legendary / sub-legendary / mythical |
-| type_1      | The Primary Type of the Pokémon                                      |
-| type_2      | The Secondary Type of the Pokémon if it exists                       |
-| has_gender  | Whether the Pokémon has a gender                                     |
+**Value** = **Red**, **Green**, **Blue**, **Brightness**
 
 # Previous Explorations
 
