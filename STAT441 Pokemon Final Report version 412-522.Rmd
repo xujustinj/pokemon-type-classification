@@ -181,7 +181,7 @@ Specifically, we utilize Bayesian Optimization to sample over the entire continu
 **TODO: selected hyperparameters**
 After applying Bayesian Optimization and nested cross-validation with $k = 5$ folds, we observe that the ratio of the L1 and L2 penalties is constant at $1.0$ which indicates that lasso regularization or L1 penalty is chosen each time.
 The coefficient `C` fluctuates between the ranges of $[0, 5]$ indicating stronger regularization.
-Overall, we obtain a model accuracy of $96.302\%$.
+Overall, we obtain a model accuracy of $99.147\%$.
 
 We also examined the model performance without the features `type_2` and the `damage_from_{Type}` and used the same search space.
 We observe that the ratio of the L1 and L2 penalties fluctuate between the ranges of $[0.4, 1]$ and the coefficient `C` fluctuates between $[3.5, 10]$, indicating a stronger regularization.
@@ -202,11 +202,11 @@ There are two formulations of multiclass classification using SVMs: one-versus-r
 We decide to use OVR because it fits one SVM for each of the 18 classes, whereas OVO will create $18 \times 17 = 306$ models which would increase the model complexity, training time, and the risk of overfitting.
 
 After hyperparameter tuning, we observe that in general, the best kernel was the RBF with the regularization parameter `C` fluctuating from $33$ to $10,000$ where `C` is inversely proportional to the strength of regularization and `gamma` was between $[0.002, 0.036]$.
-Overall, we obtain a model accuracy of $96.868\%$.
+Overall, we obtain a model accuracy of $96.680\%$.
 
 Next, we investigate the strength of the model without the features `type_2` and the `damage_from_{Type}` without changing the search space.
 We observed that in general the best kernel was still the radial basis function, with `C` and `gamma` ranging from $[18, 867]\times[0.15, 0.27]$ respectively.
-After removing these features, the overall model accuracy falls to $46.206%$.
+After removing these features, the overall model accuracy falls to $46.583\%$.
 
 ## Random Forests
 
@@ -238,11 +238,11 @@ The model is trained for `epoch` epochs using batch stochastic gradient descent 
 
 We using `H_layer` = 2, `node` = 250, and `epoch` = 350 as a rough estimate of the optimal values, selected using a broad grid search (see Appendix).
 Then, we select hyperparameters using random search (20 steps) of nearby values.
-The nested CV result shows an average of $98.957\%$ accuracy with two folds having $100\%$ accuracy.
+The nested CV result shows an average of $98.957\%$ accuracy with lowest fold having $98.881\%$ accuracy and highest fold having $99.318\%$ accuracy.
 
 After removing `type_2` and `damage_from_{Type}`, we find that the prediction task becomes much more difficult, thus we need more expressive models to converge within a reasonable number of epochs.
 In this case, the broad grid search selects `H_layer` = 2, `node` = 1300, and `epoch` = 200 as initial values for random search.
-The nested CV result shows an average of $45.16\%$ accuracy with lowest fold having $40.758\%$ and highest fold having $49.763\%$ accuracy.
+The nested CV result shows an average of $45.160\%$ accuracy with lowest fold having $43.454\%$ and highest fold having $45.940\%$ accuracy.
 
 
 # Appendix
