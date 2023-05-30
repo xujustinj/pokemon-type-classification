@@ -6,3 +6,5 @@ __pycache__
 /src/scrape/.cache
 
 /src/.ipynb_checkpoints
+
+.Rhistory
